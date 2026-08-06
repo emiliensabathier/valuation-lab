@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 import vlab.__main__ as entry
-from vlab.pipeline import CompanyResult
+from vlab.pipeline import CompanyFailure, CompanyResult
 
 
 def test_the_cli_writes_a_report(tmp_path: Path, monkeypatch) -> None:
@@ -23,3 +23,19 @@ def test_the_cli_writes_a_report(tmp_path: Path, monkeypatch) -> None:
     entry.main()
 
     assert output.read_text(encoding="utf-8").startswith("<!doctype html>")
+
+
+def test_the_cli_prints_every_failure_it_could_not_value(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    failures = [CompanyFailure("Hermes", "RMS.PA", "no revenue growth reproduces the price")]
+    monkeypatch.setattr(entry, "run", lambda **kwargs: ({}, failures))
+    output = tmp_path / "valuation.html"
+    monkeypatch.setattr("sys.argv", ["vlab", "--output", str(output)])
+
+    entry.main()
+
+    printed = capsys.readouterr().out
+    assert "Hermes" in printed
+    assert "RMS.PA" in printed
+    assert "no revenue growth reproduces the price" in printed

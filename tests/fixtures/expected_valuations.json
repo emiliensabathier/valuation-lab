@@ -1,54 +1,54 @@
 {
   "Hermes": {
     "beta": 1.245747985316004,
-    "exit_multiple": 9.420668642766506,
-    "implied_growth": 0.2484745976047019,
+    "exit_multiple": 9.420545486973051,
+    "implied_growth": 0.24847843548468768,
     "name": "Hermes",
     "normalized_growth": 0.12981306323080366,
     "price": 1626.0,
-    "terminal_share": 0.7539878967027811,
+    "terminal_share": 0.7539851660602634,
     "ticker": "RMS.PA",
     "trading_currency": "EUR",
-    "value_per_share": 1063.7954841892265,
-    "wacc": 0.09126142624999993
+    "value_per_share": 1063.7821830169926,
+    "wacc": 0.09126235785820716
   },
   "Kering": {
-    "beta": 1.3577367667490574,
-    "exit_multiple": 14.468466980314206,
-    "implied_growth": 0.07982887567921962,
+    "beta": 1.3577367667490579,
+    "exit_multiple": 14.468430577828997,
+    "implied_growth": 0.07982948064011869,
     "name": "Kering",
     "normalized_growth": -0.13031883370866426,
     "price": 289.75,
-    "terminal_share": 0.7070906881885713,
+    "terminal_share": 0.7070901048561837,
     "ticker": "KER.PA",
     "trading_currency": "EUR",
-    "value_per_share": 36.544333584190305,
-    "wacc": 0.07312497877620293
+    "value_per_share": 36.54397268490264,
+    "wacc": 0.0731251124383333
   },
   "LVMH": {
     "beta": 1.3042094578062235,
-    "exit_multiple": 10.79442423276672,
-    "implied_growth": 0.0707739841418007,
+    "exit_multiple": 10.785227678472038,
+    "implied_growth": 0.07098167762970148,
     "name": "LVMH",
     "normalized_growth": -0.017074274836627823,
-    "price": 481.45001220703125,
-    "terminal_share": 0.7166301999736976,
+    "price": 481.4500122070313,
+    "terminal_share": 0.7164341133655431,
     "ticker": "MC.PA",
     "trading_currency": "EUR",
-    "value_per_share": 313.5097973386682,
-    "wacc": 0.08549454799390789
+    "value_per_share": 313.20625343948376,
+    "wacc": 0.08555039513822306
   },
   "Richemont": {
-    "beta": 1.480143979840502,
-    "exit_multiple": 10.760864278236792,
-    "implied_growth": 0.19979780612858794,
+    "beta": 1.4801439798405023,
+    "exit_multiple": 10.573318905966183,
+    "implied_growth": 0.2047794866059715,
     "name": "Richemont",
     "normalized_growth": 0.0379802095459838,
-    "price": 196.14999389648438,
-    "terminal_share": 0.7114510582936036,
+    "price": 196.1499938964844,
+    "terminal_share": 0.7073040072731606,
     "ticker": "CFR.SW",
     "trading_currency": "CHF",
-    "value_per_share": 105.14432636807774,
-    "wacc": 0.09424155321517978
+    "value_per_share": 103.3968453445602,
+    "wacc": 0.09555842068692816
   }
 }
