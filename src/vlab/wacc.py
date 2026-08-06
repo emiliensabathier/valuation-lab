@@ -26,7 +26,11 @@ MINIMUM_OVERLAP = 30
 
 @dataclass(frozen=True)
 class Wacc:
-    """A weighted average cost of capital and the parts it was built from."""
+    """A weighted average cost of capital and the parts it was built from.
+
+    ``cost_of_debt`` is the **pre-tax** rate, as reported. The tax shield is applied when
+    blending into ``value``; a caller that taxes it again would double-count the benefit.
+    """
 
     value: float
     cost_of_equity: float
@@ -73,6 +77,14 @@ def compute_wacc(
         return Wacc(cost_of_equity, cost_of_equity, 0.0, beta, 1.0, 0.0)
 
     cost_of_debt = float(interest.iloc[0]) / gross_debt
+    if cost_of_debt < 0.0:
+        # Interest expense is reported positive by this data source, so a negative cost of
+        # debt means the sign convention is not what the model assumes. Blending it would
+        # quietly lower the WACC and raise every valuation.
+        raise ValuationError(
+            f"{ticker}: reported interest expense implies a negative cost of debt "
+            f"({cost_of_debt:.4f})"
+        )
     after_tax_debt = cost_of_debt * (1.0 - drivers.tax_rate)
 
     total = market_cap + gross_debt
