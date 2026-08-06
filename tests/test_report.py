@@ -79,6 +79,22 @@ def test_the_report_shows_each_company_and_its_implied_growth() -> None:
     assert "4.10%" in html and "11.20%" in html
 
 
+def test_each_companys_summary_row_puts_implied_growth_before_normalized_growth() -> None:
+    # The summary table's header order is "Implied growth" then "Normalized growth". A
+    # renderer that swapped the two values per row would still contain every percentage
+    # somewhere in the document and pass a bare "in html" check; this asserts the two
+    # figures land in that order within each company's own row, not just anywhere.
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    lvmh_row = html[html.index("<td>LVMH</td>") : html.index("</tr>", html.index("<td>LVMH</td>"))]
+    assert lvmh_row.index("4.10%") < lvmh_row.index("6.20%")
+
+    hermes_row = html[
+        html.index("<td>Hermes</td>") : html.index("</tr>", html.index("<td>Hermes</td>"))
+    ]
+    assert hermes_row.index("11.20%") < hermes_row.index("8.90%")
+
+
 def test_the_report_states_what_a_reverse_dcf_does_not_prove() -> None:
     html = build_report(_results(), generated_on="2026-08-06")
 
