@@ -150,3 +150,92 @@ def load_statements(
 
     _write_cache(cache_dir, ticker, statements)
     return statements
+
+
+class PriceFetcher(Protocol):
+    """Retrieves close prices for the given tickers."""
+
+    def __call__(self, tickers: list[str], period: str, interval: str) -> pd.DataFrame: ...
+
+
+def yfinance_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.DataFrame:
+    """Default price fetcher. Returns close prices, one column per ticker."""
+    import yfinance as yf
+
+    raw = yf.download(
+        tickers, period=period, interval=interval, auto_adjust=True, progress=False
+    )
+    if raw.empty:
+        raise DataError(f"no prices returned for {tickers}")
+    close = raw["Close"] if isinstance(raw.columns, pd.MultiIndex) else raw[["Close"]]
+    if isinstance(close, pd.Series):
+        close = close.to_frame(tickers[0])
+    close.index = pd.DatetimeIndex(close.index).tz_localize(None)
+    return close
+
+
+def load_prices(
+    tickers: list[str],
+    *,
+    cache_dir: Path,
+    period: str = "5y",
+    interval: str = "1wk",
+    refresh: bool = False,
+    fetcher: PriceFetcher | None = None,
+) -> pd.DataFrame:
+    """Load close prices. Raises on a missing ticker or a gap; never fills."""
+    fetch = fetcher if fetcher is not None else yfinance_price_fetcher
+    cache_dir = Path(cache_dir)
+    key = "prices_" + "_".join(sorted(tickers)) + f"_{period}_{interval}"
+
+    if not refresh:
+        cached = _read_cached_frame(cache_dir, key)
+        if cached is not None:
+            return cached
+
+    fetched = fetch(list(tickers), period, interval)
+    missing = [ticker for ticker in tickers if ticker not in fetched.columns]
+    if missing:
+        raise DataError(f"no price series returned for {missing}")
+
+    prices = fetched.loc[:, list(tickers)].sort_index()
+    incomplete = prices.columns[prices.isna().any()].tolist()
+    if incomplete:
+        raise DataError(f"missing price observations for {incomplete}; refusing to fill gaps")
+
+    _write_cache_frame(cache_dir, key, prices)
+    return prices
+
+
+def load_fx_rate(
+    pair: str,
+    *,
+    cache_dir: Path,
+    refresh: bool = False,
+    fetcher: PriceFetcher | None = None,
+) -> float:
+    """Latest close for an exchange-rate pair such as ``EURCHF=X``."""
+    prices = load_prices(
+        [pair], cache_dir=cache_dir, period="1mo", interval="1d", refresh=refresh, fetcher=fetcher
+    )
+    return float(prices[pair].iloc[-1])
+
+
+def _read_cached_frame(cache_dir: Path, key: str) -> pd.DataFrame | None:
+    data_path, meta_path = _paths(cache_dir, key)
+    if not (data_path.exists() and meta_path.exists()):
+        return None
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    fetched_at = datetime.fromisoformat(str(meta["fetched_at"]))
+    if datetime.now(UTC) - fetched_at > CACHE_MAX_AGE:
+        return None
+    return pd.read_parquet(data_path)
+
+
+def _write_cache_frame(cache_dir: Path, key: str, frame: pd.DataFrame) -> None:
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    data_path, meta_path = _paths(cache_dir, key)
+    frame.to_parquet(data_path)
+    meta_path.write_text(
+        json.dumps({"fetched_at": datetime.now(UTC).isoformat()}, indent=2), encoding="utf-8"
+    )
