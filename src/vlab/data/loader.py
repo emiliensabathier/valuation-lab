@@ -82,6 +82,13 @@ def _read_cached(cache_dir: Path, ticker: str) -> Statements | None:
         name: stacked.loc[name].dropna(axis=1, how="all")
         for name in ("income", "cashflow", "balance")
     }
+    # Parquet cannot carry timestamp column labels, so _write_cache stringified them.
+    # Restoring them here is what keeps the two return paths interchangeable: without it a
+    # cache hit hands later tasks string columns where a fresh fetch hands them timestamps,
+    # and the difference surfaces far from its cause.
+    for frame in frames.values():
+        frame.columns = pd.DatetimeIndex(frame.columns)
+
     return Statements(
         income=frames["income"],
         cashflow=frames["cashflow"],

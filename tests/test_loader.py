@@ -1,3 +1,5 @@
+import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -61,12 +63,51 @@ def test_refresh_bypasses_the_cache(tmp_path: Path) -> None:
     assert fetcher.calls == 2
 
 
-def test_an_empty_statement_frame_raises(tmp_path: Path) -> None:
-    empty = Statements(pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), {})
-    fetcher = RecordingFetcher(empty)
+@pytest.mark.parametrize("blank", ["income", "cashflow", "balance"])
+def test_any_empty_statement_frame_raises(tmp_path: Path, blank: str) -> None:
+    # Emptying all three at once would pass against an implementation that only checked
+    # the income statement. One blank frame at a time is what pins all three.
+    complete = _statements()
+    frames = {
+        "income": complete.income,
+        "cashflow": complete.cashflow,
+        "balance": complete.balance,
+    }
+    frames[blank] = pd.DataFrame()
+    fetcher = RecordingFetcher(Statements(**frames, info=complete.info))
 
     with pytest.raises(DataError, match="no financial statements"):
         load_statements("GHOST", cache_dir=tmp_path, fetcher=fetcher)
+
+
+def test_a_cached_read_returns_the_same_frames_as_a_fresh_one(tmp_path: Path) -> None:
+    # The cache round-trips through parquet, which cannot store timestamp column labels.
+    # If they are not restored on read, the two paths return quietly different objects.
+    fetcher = RecordingFetcher(_statements())
+
+    fresh = load_statements("MC.PA", cache_dir=tmp_path, fetcher=fetcher)
+    cached = load_statements("MC.PA", cache_dir=tmp_path, fetcher=fetcher)
+
+    assert fetcher.calls == 1
+    pd.testing.assert_index_equal(cached.income.columns, fresh.income.columns)
+    pd.testing.assert_frame_equal(cached.income, fresh.income)
+
+
+def test_a_stale_cache_entry_is_refetched(tmp_path: Path) -> None:
+    # The whole point of recording fetched_at. A sibling project wrote that timestamp and
+    # never read it, so a months-old snapshot was served indefinitely while the report
+    # presented it as current. This test is what stops that regressing here.
+    fetcher = RecordingFetcher(_statements())
+    load_statements("MC.PA", cache_dir=tmp_path, fetcher=fetcher)
+
+    sidecar = tmp_path / "MC_PA.json"
+    meta = json.loads(sidecar.read_text(encoding="utf-8"))
+    meta["fetched_at"] = (datetime.now(UTC) - timedelta(days=400)).isoformat()
+    sidecar.write_text(json.dumps(meta), encoding="utf-8")
+
+    load_statements("MC.PA", cache_dir=tmp_path, fetcher=fetcher)
+
+    assert fetcher.calls == 2
 
 
 def test_require_returns_the_row_when_present() -> None:
