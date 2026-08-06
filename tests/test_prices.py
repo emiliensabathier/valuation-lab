@@ -1,3 +1,5 @@
+import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -52,3 +54,52 @@ def test_load_fx_rate_returns_the_latest_close(tmp_path: Path) -> None:
     rate = load_fx_rate("EURCHF=X", cache_dir=tmp_path, fetcher=fetcher)
 
     assert rate == pytest.approx(0.9359)
+
+
+def test_a_second_call_uses_the_cache(tmp_path: Path) -> None:
+    fetcher = RecordingPriceFetcher(_weekly({"MC.PA": [1.0, 2.0, 3.0]}))
+
+    load_prices(["MC.PA"], cache_dir=tmp_path, fetcher=fetcher)
+    load_prices(["MC.PA"], cache_dir=tmp_path, fetcher=fetcher)
+
+    assert fetcher.calls == 1
+
+
+def test_refresh_bypasses_the_cache(tmp_path: Path) -> None:
+    fetcher = RecordingPriceFetcher(_weekly({"MC.PA": [1.0, 2.0, 3.0]}))
+
+    load_prices(["MC.PA"], cache_dir=tmp_path, fetcher=fetcher)
+    load_prices(["MC.PA"], cache_dir=tmp_path, refresh=True, fetcher=fetcher)
+
+    assert fetcher.calls == 2
+
+
+def test_a_stale_cached_frame_is_refetched(tmp_path: Path) -> None:
+    fetcher = RecordingPriceFetcher(_weekly({"MC.PA": [1.0, 2.0, 3.0]}))
+    load_prices(["MC.PA"], cache_dir=tmp_path, fetcher=fetcher)
+
+    sidecar = next(tmp_path.glob("prices_*.json"))
+    meta = json.loads(sidecar.read_text(encoding="utf-8"))
+    meta["fetched_at"] = (datetime.now(UTC) - timedelta(days=400)).isoformat()
+    sidecar.write_text(json.dumps(meta), encoding="utf-8")
+
+    load_prices(["MC.PA"], cache_dir=tmp_path, fetcher=fetcher)
+
+    assert fetcher.calls == 2
+
+
+def test_a_cache_hit_returns_the_columns_in_the_order_requested(tmp_path: Path) -> None:
+    # The cache key sorts the tickers, so the same pair asked for the other way round hits
+    # the same entry. Without restoring the caller's order the columns come back
+    # positionally mislabelled — the same "two return paths quietly differing" defect the
+    # statement loader had with column dtypes, wearing a different disguise.
+    fetcher = RecordingPriceFetcher(
+        _weekly({"MC.PA": [1.0, 2.0, 3.0], "RMS.PA": [4.0, 5.0, 6.0]})
+    )
+
+    load_prices(["MC.PA", "RMS.PA"], cache_dir=tmp_path, fetcher=fetcher)
+    swapped = load_prices(["RMS.PA", "MC.PA"], cache_dir=tmp_path, fetcher=fetcher)
+
+    assert fetcher.calls == 1
+    assert list(swapped.columns) == ["RMS.PA", "MC.PA"]
+    assert swapped["RMS.PA"].iloc[-1] == 6.0

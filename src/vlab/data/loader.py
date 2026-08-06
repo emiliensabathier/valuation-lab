@@ -191,7 +191,11 @@ def load_prices(
     if not refresh:
         cached = _read_cached_frame(cache_dir, key)
         if cached is not None:
-            return cached
+            # The cache key sorts the tickers, so the same set requested in a different
+            # order hits the same entry. Restore the caller's order before returning:
+            # otherwise a cache hit hands back columns that are positionally mislabelled
+            # against what was asked for.
+            return cached.loc[:, list(tickers)]
 
     fetched = fetch(list(tickers), period, interval)
     missing = [ticker for ticker in tickers if ticker not in fetched.columns]
