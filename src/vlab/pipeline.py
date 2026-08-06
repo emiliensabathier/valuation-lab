@@ -126,7 +126,13 @@ def run(
         drivers = drivers_from(statements, company.ticker)
 
         price = float(prices[company.ticker].iloc[-1])
-        shares = float(statements.info.get("sharesOutstanding") or drivers.shares)
+        # The balance-sheet count (drivers.shares, "Ordinary Shares Number"), not
+        # info["sharesOutstanding"]: fundamentals.py already divides equity value by the
+        # balance-sheet count, and the two sources can disagree by several percent (Richemont:
+        # 534.2M reported vs 587.9M on the balance sheet). Using two different counts for the
+        # same company's market cap and its equity bridge is an unreconciled, undocumented
+        # discrepancy; a single source keeps both consistent with each other.
+        shares = drivers.shares
 
         # market_cap must be in the reporting currency, the same currency gross debt is
         # reported in on the balance sheet. Multiplying the trading-currency price by shares
