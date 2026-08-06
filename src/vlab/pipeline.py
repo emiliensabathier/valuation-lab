@@ -15,7 +15,7 @@ from vlab.data.loader import (
     load_statements,
 )
 from vlab.dcf import assumptions_from, terminal_exit_multiple, value
-from vlab.errors import DataError
+from vlab.errors import DataError, ValuationError
 from vlab.fundamentals import drivers_from
 from vlab.report.build import build_report
 from vlab.reverse import implied_revenue_growth
@@ -43,6 +43,20 @@ class CompanyResult:
     exit_multiple: float
     sensitivity: pd.DataFrame
     margin_sensitivity: pd.DataFrame
+
+
+@dataclass(frozen=True)
+class CompanyFailure:
+    """A company whose valuation could not be produced, and why.
+
+    Recorded rather than raised past ``run``, so that one company's infeasible valuation
+    does not remove the other three from the report -- and recorded rather than silently
+    dropped, which is the failure mode this repository forbids just as firmly as a crash.
+    """
+
+    name: str
+    ticker: str
+    reason: str
 
 
 def _fx_pair(company: Company) -> str:
@@ -93,89 +107,116 @@ def _convert_grid_to_trading_currency(
     return table * _rate_for(company, rates)
 
 
+def _value_company(
+    company: Company,
+    prices: pd.DataFrame,
+    market_prices: pd.Series,
+    *,
+    cache_dir: Path,
+    refresh: bool,
+    statement_fetcher: StatementFetcher | None,
+    price_fetcher: PriceFetcher | None,
+) -> CompanyResult:
+    """Value one company end to end. Raises DataError or ValuationError on failure.
+
+    The FX rate for a cross-currency company is fetched here, inside the per-company try in
+    ``run``, rather than in a shared pre-loop -- so a rate that fails to fetch fails only the
+    one company that needed it, not the three that did not.
+    """
+    statements = load_statements(
+        company.ticker, cache_dir=cache_dir, refresh=refresh, fetcher=statement_fetcher
+    )
+    drivers = drivers_from(statements, company.ticker)
+
+    price = float(prices[company.ticker].iloc[-1])
+    # The balance-sheet count (drivers.shares, "Ordinary Shares Number"), not
+    # info["sharesOutstanding"]: fundamentals.py already divides equity value by the
+    # balance-sheet count, and the two sources can disagree by several percent (Richemont:
+    # 534.2M reported vs 587.9M on the balance sheet). Using two different counts for the
+    # same company's market cap and its equity bridge is an unreconciled, undocumented
+    # discrepancy; a single source keeps both consistent with each other.
+    shares = drivers.shares
+
+    rates: dict[str, float] = {}
+    if needs_conversion(company):
+        rates[_fx_pair(company)] = load_fx_rate(
+            _fx_pair(company), cache_dir=cache_dir, refresh=refresh, fetcher=price_fetcher
+        )
+
+    # market_cap must be in the reporting currency, the same currency gross debt is reported
+    # in on the balance sheet. Multiplying the trading-currency price by shares here would
+    # blend, say, a Swiss-franc market cap with euro debt inside compute_wacc — a unit error
+    # that looks like a plausible number and is not one.
+    price_in_reporting = price / _rate_for(company, rates) if needs_conversion(company) else price
+    market_cap = price_in_reporting * shares
+
+    cost_of_capital = compute_wacc(
+        statements, company.ticker, drivers, market_cap,
+        prices[company.ticker], market_prices,
+    )
+    assumptions = assumptions_from(drivers, cost_of_capital.value, TERMINAL_GROWTH)
+    valuation = value(drivers, assumptions)
+
+    # The model works in the reporting currency; the price is quoted in the trading one.
+    value_per_share = convert_to_trading_currency(valuation.value_per_share, company, rates)
+
+    return CompanyResult(
+        name=company.name,
+        ticker=company.ticker,
+        trading_currency=company.trading_currency,
+        price=price,
+        value_per_share=value_per_share,
+        implied_growth=implied_revenue_growth(drivers, assumptions, price_in_reporting),
+        normalized_growth=drivers.revenue_growth,
+        wacc=cost_of_capital.value,
+        beta=cost_of_capital.beta,
+        terminal_share=valuation.terminal_share,
+        exit_multiple=terminal_exit_multiple(drivers, assumptions),
+        sensitivity=default_wacc_terminal_grid(drivers, assumptions),
+        margin_sensitivity=default_margin_growth_grid(drivers, assumptions),
+    )
+
+
 def run(
     *,
     cache_dir: Path,
     refresh: bool = False,
     statement_fetcher: StatementFetcher | None = None,
     price_fetcher: PriceFetcher | None = None,
-) -> dict[str, CompanyResult]:
+) -> tuple[dict[str, CompanyResult], list[CompanyFailure]]:
     """Value every peer and invert the model against its market price.
 
     The two fetchers are injectable so the whole pipeline can be replayed offline against
     frozen inputs. That is what lets the regression fixture recompute the published numbers
     and compare them, rather than merely restating them.
+
+    Each company is valued independently. One company's data being unusable, or its price
+    implying a growth rate outside the reverse DCF's plausibility bracket, is recorded as a
+    CompanyFailure instead of aborting the other three -- a real refusal for that one company,
+    reported on the page, rather than either a crash that loses every valuation or a silent
+    drop that loses just the one.
     """
     all_tickers = tickers() + [MARKET_INDEX]
     prices = load_prices(all_tickers, cache_dir=cache_dir, refresh=refresh, fetcher=price_fetcher)
     market_prices = prices[MARKET_INDEX]
 
-    rates: dict[str, float] = {}
-    for company in PEERS:
-        if needs_conversion(company):
-            pair = f"{company.reporting_currency}{company.trading_currency}=X"
-            rates[pair] = load_fx_rate(
-                pair, cache_dir=cache_dir, refresh=refresh, fetcher=price_fetcher
-            )
-
     results: dict[str, CompanyResult] = {}
+    failures: list[CompanyFailure] = []
     for company in PEERS:
-        statements = load_statements(
-            company.ticker, cache_dir=cache_dir, refresh=refresh, fetcher=statement_fetcher
-        )
-        drivers = drivers_from(statements, company.ticker)
+        try:
+            results[company.name] = _value_company(
+                company, prices, market_prices,
+                cache_dir=cache_dir, refresh=refresh,
+                statement_fetcher=statement_fetcher, price_fetcher=price_fetcher,
+            )
+        except (DataError, ValuationError) as exc:
+            failures.append(CompanyFailure(company.name, company.ticker, str(exc)))
 
-        price = float(prices[company.ticker].iloc[-1])
-        # The balance-sheet count (drivers.shares, "Ordinary Shares Number"), not
-        # info["sharesOutstanding"]: fundamentals.py already divides equity value by the
-        # balance-sheet count, and the two sources can disagree by several percent (Richemont:
-        # 534.2M reported vs 587.9M on the balance sheet). Using two different counts for the
-        # same company's market cap and its equity bridge is an unreconciled, undocumented
-        # discrepancy; a single source keeps both consistent with each other.
-        shares = drivers.shares
-
-        # market_cap must be in the reporting currency, the same currency gross debt is
-        # reported in on the balance sheet. Multiplying the trading-currency price by shares
-        # here would blend, say, a Swiss-franc market cap with euro debt inside compute_wacc
-        # — a unit error that looks like a plausible number and is not one. No silent default
-        # for the rate either: a currency-needing company's rate is guaranteed present because
-        # the pre-loop's unconditional fetch above already raised if it were missing.
-        price_in_reporting = (
-            price / _rate_for(company, rates) if needs_conversion(company) else price
-        )
-        market_cap = price_in_reporting * shares
-
-        cost_of_capital = compute_wacc(
-            statements, company.ticker, drivers, market_cap,
-            prices[company.ticker], market_prices,
-        )
-        assumptions = assumptions_from(drivers, cost_of_capital.value, TERMINAL_GROWTH)
-        valuation = value(drivers, assumptions)
-
-        # The model works in the reporting currency; the price is quoted in the trading one.
-        value_per_share = convert_to_trading_currency(
-            valuation.value_per_share, company, rates
-        )
-
-        results[company.name] = CompanyResult(
-            name=company.name,
-            ticker=company.ticker,
-            trading_currency=company.trading_currency,
-            price=price,
-            value_per_share=value_per_share,
-            implied_growth=implied_revenue_growth(drivers, assumptions, price_in_reporting),
-            normalized_growth=drivers.revenue_growth,
-            wacc=cost_of_capital.value,
-            beta=cost_of_capital.beta,
-            terminal_share=valuation.terminal_share,
-            exit_multiple=terminal_exit_multiple(drivers, assumptions),
-            sensitivity=default_wacc_terminal_grid(drivers, assumptions),
-            margin_sensitivity=default_margin_growth_grid(drivers, assumptions),
-        )
-
-    return results
+    return results, failures
 
 
-def render(results: dict[str, CompanyResult], generated_on: str) -> str:
+def render(
+    results: dict[str, CompanyResult], failures: list[CompanyFailure], generated_on: str
+) -> str:
     """Render the pipeline output as HTML."""
-    return build_report(results, generated_on=generated_on)
+    return build_report(results, failures, generated_on=generated_on)

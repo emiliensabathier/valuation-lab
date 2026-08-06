@@ -25,11 +25,12 @@ def expected() -> dict[str, dict[str, float]]:
 def recomputed(tmp_path_factory) -> dict[str, dict[str, float]]:
     """Replay the whole pipeline against the frozen inputs, with no network."""
     statements, prices = frozen_fetchers()
-    results = run(
+    results, failures = run(
         cache_dir=tmp_path_factory.mktemp("cache"),
         statement_fetcher=statements,
         price_fetcher=prices,
     )
+    assert not failures, failures
     return {
         name: {
             field: getattr(result, field)

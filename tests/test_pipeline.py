@@ -137,7 +137,7 @@ def _fake_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.Da
 
 
 def test_run_associates_each_company_with_its_own_figures(tmp_path: Path) -> None:
-    results = run(
+    results, failures = run(
         cache_dir=tmp_path,
         statement_fetcher=_fake_statement_fetcher,
         price_fetcher=_fake_price_fetcher,
@@ -145,6 +145,7 @@ def test_run_associates_each_company_with_its_own_figures(tmp_path: Path) -> Non
 
     # All four peers come back — a dropped company is not silently absent from the report.
     assert set(results) == {"LVMH", "Hermes", "Kering", "Richemont"}
+    assert failures == []
 
     # Each company's price is its own, exactly, not another company's or a repeated figure.
     assert results["LVMH"].price == pytest.approx(480.0)
@@ -198,7 +199,7 @@ def test_richemonts_wacc_uses_market_cap_in_the_reporting_currency_not_the_tradi
     cap must be computed in EUR (the reporting currency, same as gross debt) before it ever
     reaches compute_wacc.
     """
-    results = run(
+    results, _failures = run(
         cache_dir=tmp_path,
         statement_fetcher=_fake_statement_fetcher,
         price_fetcher=_fake_price_fetcher,
@@ -241,7 +242,7 @@ def test_market_cap_uses_the_balance_sheet_share_count_not_infos_sharesoutstandi
             )
         return statements
 
-    results = run(
+    results, _failures = run(
         cache_dir=tmp_path,
         statement_fetcher=_mismatched_fetcher,
         price_fetcher=_fake_price_fetcher,
@@ -257,3 +258,31 @@ def test_market_cap_uses_the_balance_sheet_share_count_not_infos_sharesoutstandi
     )
 
     assert results["LVMH"].wacc == pytest.approx(expected.value, rel=1e-9)
+
+
+def test_a_single_companys_valuation_failure_does_not_abort_the_others(tmp_path: Path) -> None:
+    """IMPORTANT bug: run() had no per-company error isolation. Hermes' implied growth sits
+    close enough to the reverse DCF's plausibility ceiling that a modest price move pushes it
+    past the bracket and implied_revenue_growth raises ValuationError -- which used to
+    propagate straight out of run() and abort the other three companies too. The failure
+    must be recorded and the other three must still come back.
+    """
+
+    def _extreme_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.DataFrame:
+        frame = _fake_price_fetcher(tickers, period, interval)
+        if "RMS.PA" in frame.columns:
+            frame = frame.copy()
+            frame.loc[frame.index[-1], "RMS.PA"] = frame["RMS.PA"].iloc[-1] * 50.0
+        return frame
+
+    results, failures = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_fake_statement_fetcher,
+        price_fetcher=_extreme_price_fetcher,
+    )
+
+    assert set(results) == {"LVMH", "Kering", "Richemont"}
+    assert len(failures) == 1
+    assert failures[0].name == "Hermes"
+    assert failures[0].ticker == "RMS.PA"
+    assert "growth" in failures[0].reason.lower()

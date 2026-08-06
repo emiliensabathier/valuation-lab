@@ -58,7 +58,9 @@ def main() -> None:
     series.to_csv(FIXTURES / "prices.csv")
 
     # Then the outputs, computed from exactly those inputs.
-    results = run(cache_dir=CACHE)
+    results, failures = run(cache_dir=CACHE)
+    if failures:
+        raise RuntimeError(f"cannot freeze a fixture with unresolved failures: {failures}")
     frozen = {}
     for name, result in results.items():
         record = asdict(result)

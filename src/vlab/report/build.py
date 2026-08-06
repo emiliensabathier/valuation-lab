@@ -92,16 +92,35 @@ def _sensitivity_section(results) -> str:
     return "".join(blocks)
 
 
-def build_report(results, generated_on: str) -> str:
-    """Render the whole report as one self-contained HTML document."""
-    if not results:
-        raise ValueError("the report needs at least one valuation result")
+def _failures_section(failures) -> str:
+    """A visible refusal for each company the model could not value.
 
-    implied = {result.name: result.implied_growth for result in results.values()}
-    normalized = {result.name: result.normalized_growth for result in results.values()}
-    prices = {
-        result.name: (result.price, result.value_per_share) for result in results.values()
-    }
+    A company that fails is named here, with the reason, rather than being silently absent
+    from the summary table -- three valuations and a stated refusal, not three valuations and
+    a silence that looks like completeness.
+    """
+    items = "".join(
+        f"<li><strong>{html_escape.escape(failure.name)}</strong> "
+        f"({html_escape.escape(failure.ticker)}): {html_escape.escape(failure.reason)}</li>"
+        for failure in failures
+    )
+    return (
+        "<h2>Valuations that could not be produced</h2>"
+        '<div class="caveat"><p class="note">The model refuses to publish a number it could '
+        f"not defend, rather than guessing. Refused for {len(failures)} "
+        f'{"company" if len(failures) == 1 else "companies"}:</p><ul>{items}</ul></div>'
+    )
+
+
+def build_report(results, failures=(), *, generated_on: str) -> str:
+    """Render the whole report as one self-contained HTML document.
+
+    ``failures`` lists the companies the pipeline could not value (see
+    ``pipeline.CompanyFailure``); they are rendered as a visible, named refusal rather than
+    a silent absence from the summary table.
+    """
+    if not results and not failures:
+        raise ValueError("the report needs at least one company, valued or failed")
 
     sections = [
         "<h1>What the market is paying for growth</h1>",
@@ -112,8 +131,30 @@ def build_report(results, generated_on: str) -> str:
         "cash flow does not say a share is expensive. It says what the market assumes. "
         "Judging whether the implied growth is plausible for a given house is an analyst's "
         "work, not a model's.</div>",
+    ]
+
+    if not results:
+        sections.append(_failures_section(failures))
+        body = "\n".join(sections)
+        return (
+            '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+            "<title>What the market is paying for growth</title>\n"
+            f"<style>{STYLE}</style>\n</head>\n<body>\n{body}\n</body>\n</html>\n"
+        )
+
+    implied = {result.name: result.implied_growth for result in results.values()}
+    normalized = {result.name: result.normalized_growth for result in results.values()}
+    prices = {
+        result.name: (result.price, result.value_per_share) for result in results.values()
+    }
+
+    sections += [
         "<h2>Summary</h2>",
         _summary_table(results),
+    ]
+    if failures:
+        sections.append(_failures_section(failures))
+    sections += [
         "<h2>Implied against delivered growth</h2>",
         implied_growth_chart(implied, normalized),
         "<h2>Price against model</h2>",

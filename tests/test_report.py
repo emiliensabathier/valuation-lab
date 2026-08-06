@@ -133,6 +133,37 @@ def test_an_empty_result_set_raises() -> None:
         build_report({}, generated_on="2026-08-06")
 
 
+def test_a_company_failure_is_rendered_visibly_with_its_reason() -> None:
+    # IMPORTANT bug: pipeline.run() had no per-company error isolation, so one company's
+    # ValuationError took down the whole report. Once isolated, the failure must not vanish
+    # silently either -- a reader has to see three valuations and a named, explained refusal.
+    from vlab.pipeline import CompanyFailure
+
+    failures = [
+        CompanyFailure(
+            "Kering", "KER.PA",
+            "no revenue growth in [-0.05, 0.25] reproduces a price of 289.75",
+        )
+    ]
+
+    html = build_report(_results(), failures, generated_on="2026-08-06")
+
+    assert "Kering" in html
+    assert "KER.PA" in html
+    assert "no revenue growth" in html
+
+
+def test_failures_alone_with_no_valued_companies_still_render_a_page() -> None:
+    from vlab.pipeline import CompanyFailure
+
+    failures = [CompanyFailure("Kering", "KER.PA", "some reason")]
+
+    html = build_report({}, failures, generated_on="2026-08-06")
+
+    assert html.startswith("<!doctype html>")
+    assert "Kering" in html
+
+
 def test_a_nan_cell_in_the_sensitivity_grid_is_shown_as_a_dash_not_a_number() -> None:
     # Task 8's own default WACC x terminal-growth axes never produce an infeasible cell,
     # so a renderer only exercised against that preset could still fill a NaN with "nan"

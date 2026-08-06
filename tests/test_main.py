@@ -16,7 +16,7 @@ def test_the_cli_writes_a_report(tmp_path: Path, monkeypatch) -> None:
             sensitivity=table, margin_sensitivity=table,
         )
     }
-    monkeypatch.setattr(entry, "run", lambda **kwargs: fake)
+    monkeypatch.setattr(entry, "run", lambda **kwargs: (fake, []))
     output = tmp_path / "valuation.html"
     monkeypatch.setattr("sys.argv", ["vlab", "--output", str(output)])
 

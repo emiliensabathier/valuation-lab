@@ -16,13 +16,16 @@ def main() -> None:
     parser.add_argument("--refresh", action="store_true", help="ignore the cached data")
     args = parser.parse_args()
 
-    results = run(cache_dir=Path(args.cache_dir), refresh=args.refresh)
-    html = render(results, generated_on=datetime.now(UTC).date().isoformat())
+    results, failures = run(cache_dir=Path(args.cache_dir), refresh=args.refresh)
+    html = render(results, failures, generated_on=datetime.now(UTC).date().isoformat())
 
     destination = Path(args.output)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(html, encoding="utf-8")
     print(f"wrote {destination} ({len(html):,} bytes)")
+    if failures:
+        for failure in failures:
+            print(f"  refused: {failure.name} ({failure.ticker}): {failure.reason}")
 
 
 if __name__ == "__main__":  # pragma: no cover
