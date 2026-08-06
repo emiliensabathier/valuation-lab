@@ -1,6 +1,6 @@
 import pytest
 
-from vlab.dcf import Assumptions, free_cash_flows, value
+from vlab.dcf import Assumptions, assumptions_from, free_cash_flows, value
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
 
@@ -92,3 +92,18 @@ def test_a_wacc_at_or_below_the_terminal_growth_raises() -> None:
 def test_zero_shares_raises_rather_than_dividing() -> None:
     with pytest.raises(ValuationError, match="shares"):
         value(_drivers(shares=0.0), _assumptions())
+
+
+def test_assumptions_from_maps_fields_correctly_with_distinct_values() -> None:
+    # Use mutually distinct values so any transposition is caught.
+    drivers = _drivers(revenue_growth=0.05, ebit_margin=0.15)
+    assumptions = assumptions_from(drivers, wacc=0.12, terminal_growth=0.03)
+
+    # Fields from drivers
+    assert assumptions.revenue_growth == 0.05
+    assert assumptions.ebit_margin == 0.15
+    # Fields from arguments
+    assert assumptions.wacc == 0.12
+    assert assumptions.terminal_growth == 0.03
+    # Default
+    assert assumptions.years == 5
