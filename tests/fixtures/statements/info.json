@@ -1,0 +1,22 @@
+{
+  "CFR.SW": {
+    "currency": "CHF",
+    "financialCurrency": "EUR",
+    "sharesOutstanding": 534182089
+  },
+  "KER.PA": {
+    "currency": "EUR",
+    "financialCurrency": "EUR",
+    "sharesOutstanding": 122619351
+  },
+  "MC.PA": {
+    "currency": "EUR",
+    "financialCurrency": "EUR",
+    "sharesOutstanding": 493099227
+  },
+  "RMS.PA": {
+    "currency": "EUR",
+    "financialCurrency": "EUR",
+    "sharesOutstanding": 104739811
+  }
+}
