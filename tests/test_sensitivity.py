@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 
 from vlab.dcf import Assumptions, value
@@ -18,8 +20,9 @@ def _assumptions() -> Assumptions:
 
 
 def test_the_grid_has_the_requested_shape_and_labels() -> None:
+    drivers, assumptions = _drivers(), _assumptions()
     table = grid(
-        _drivers(), _assumptions(),
+        drivers, assumptions,
         row_field="wacc", row_values=[0.08, 0.09, 0.10],
         column_field="terminal_growth", column_values=[0.01, 0.02],
     )
@@ -27,6 +30,9 @@ def test_the_grid_has_the_requested_shape_and_labels() -> None:
     assert list(table.index) == [0.08, 0.09, 0.10]
     assert list(table.columns) == [0.01, 0.02]
     assert table.shape == (3, 2)
+    # Verify an off-diagonal cell's value to detect transposed axes
+    expected = value(drivers, replace(assumptions, wacc=0.08, terminal_growth=0.02)).value_per_share
+    assert table.loc[0.08, 0.02] == pytest.approx(expected)
 
 
 def test_each_cell_is_the_valuation_at_that_pair_of_assumptions() -> None:

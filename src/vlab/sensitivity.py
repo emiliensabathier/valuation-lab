@@ -16,7 +16,7 @@ from dataclasses import replace
 import numpy as np
 import pandas as pd
 
-from vlab.dcf import Assumptions, value
+from vlab.dcf import Assumptions, _require_feasible, value
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
 
@@ -37,9 +37,11 @@ def grid(
         for column in column_values:
             candidate = replace(assumptions, **{row_field: row, column_field: column})
             try:
-                table.loc[row, column] = value(drivers, candidate).value_per_share
+                _require_feasible(candidate)
             except ValuationError:
                 table.loc[row, column] = np.nan
+            else:
+                table.loc[row, column] = value(drivers, candidate).value_per_share
 
     return table
 
