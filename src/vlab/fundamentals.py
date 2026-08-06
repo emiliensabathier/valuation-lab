@@ -71,8 +71,8 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
     margin = _median_ratio(ebit, revenue)
     if margin <= 0.0:
         raise ValuationError(
-            f"{ticker}: normalized EBIT margin is negative ({margin:.3f}); this model does "
-            "not value a structurally loss-making business"
+            f"{ticker}: normalized EBIT margin is not positive ({margin:.3f}); this model "
+            "does not value a structurally loss-making business"
         )
 
     return Drivers(

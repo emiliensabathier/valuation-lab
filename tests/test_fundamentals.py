@@ -29,8 +29,16 @@ def _statements(
         index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital"],
         columns=periods,
     )
+    # Balance-sheet rows deliberately vary across periods. Constant rows would make the
+    # net-debt test unable to tell the latest year from the oldest, leaving the same
+    # period-selection bug the revenue tests exist to catch entirely uncovered here.
     balance = pd.DataFrame(
-        [[40.0] * n, [15.0] * n, [2.0] * n, [500.0] * n],
+        [
+            [40.0 + 5.0 * offset for offset in range(n)],
+            [15.0 + 2.0 * offset for offset in range(n)],
+            [2.0 + 1.0 * offset for offset in range(n)],
+            [500.0 + 10.0 * offset for offset in range(n)],
+        ],
         index=["Total Debt", "Cash Cash Equivalents And Short Term Investments",
                "Minority Interest", "Ordinary Shares Number"],
         columns=periods,
@@ -71,12 +79,22 @@ def test_cash_consuming_ratios_keep_their_reported_negative_sign() -> None:
     assert drivers.da_ratio == pytest.approx(0.10)
 
 
-def test_net_debt_is_total_debt_less_cash_and_short_term_investments() -> None:
+def test_the_balance_sheet_is_read_from_the_latest_reported_period() -> None:
+    # The fixture's balance rows increase with age, so the oldest period would give
+    # net debt 45 - 17 = 28, minorities 3.0 and 510 shares. Asserting the latest values
+    # is what pins the period selection rather than merely the arithmetic.
     drivers = drivers_from(_statements([100.0, 90.0], [20.0, 18.0]), "TEST")
 
     assert drivers.net_debt == pytest.approx(25.0)
     assert drivers.minority_interest == pytest.approx(2.0)
     assert drivers.shares == pytest.approx(500.0)
+
+
+def test_a_single_reported_year_raises_because_growth_cannot_be_measured() -> None:
+    # One fiscal year gives zero year-on-year observations. Returning a zero growth rate
+    # would be an invention; the model refuses instead.
+    with pytest.raises(ValuationError, match="fewer than two"):
+        drivers_from(_statements([100.0], [20.0]), "TEST")
 
 
 def test_the_effective_tax_rate_is_the_median_of_provision_over_pretax() -> None:
@@ -98,5 +116,5 @@ def test_a_missing_statement_line_raises_naming_the_ticker() -> None:
 def test_a_negative_normalized_margin_raises_rather_than_valuing_a_loss_maker() -> None:
     statements = _statements([100.0, 100.0, 100.0], [-5.0, -6.0, -4.0])
 
-    with pytest.raises(ValuationError, match="negative"):
+    with pytest.raises(ValuationError, match="not positive"):
         drivers_from(statements, "TEST")
