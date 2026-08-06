@@ -59,7 +59,14 @@ def require(frame: pd.DataFrame, line: str, ticker: str) -> pd.Series:
     """
     if line not in frame.index:
         raise DataError(f"{ticker}: statement line {line!r} is not reported")
-    return frame.loc[line]
+    row = frame.loc[line]
+    if isinstance(row, pd.DataFrame):
+        # A duplicated index label makes .loc return every matching row as a DataFrame
+        # instead of one Series. Left alone, that surfaces far downstream as a bare
+        # TypeError from whatever arithmetic first touches it -- the one place this
+        # module's own error contract would otherwise break.
+        raise DataError(f"{ticker}: statement line {line!r} is duplicated, not one row")
+    return row
 
 
 def _paths(cache_dir: Path, ticker: str) -> tuple[Path, Path]:

@@ -168,3 +168,19 @@ def test_require_names_both_the_ticker_and_the_line_when_absent() -> None:
 
     assert "MC.PA" in str(excinfo.value)
     assert "Operating Income" in str(excinfo.value)
+
+
+def test_require_raises_a_data_error_on_a_duplicated_statement_line() -> None:
+    # A duplicated index label makes frame.loc[line] return a DataFrame instead of a Series
+    # -- the one place the error contract breaks, handing a caller a TypeError from
+    # downstream arithmetic instead of this module's own DataError.
+    columns = pd.DatetimeIndex(["2025-12-31", "2024-12-31"])
+    frame = pd.DataFrame(
+        {columns[0]: [100.0, 105.0], columns[1]: [90.0, 95.0]},
+        index=["Total Revenue", "Total Revenue"],
+    )
+
+    with pytest.raises(DataError, match="MC.PA") as excinfo:
+        require(frame, "Total Revenue", "MC.PA")
+
+    assert "Total Revenue" in str(excinfo.value)
