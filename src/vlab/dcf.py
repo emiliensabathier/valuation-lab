@@ -110,3 +110,24 @@ def value(drivers: Drivers, assumptions: Assumptions) -> Valuation:
         pv_terminal=pv_terminal,
         terminal_share=pv_terminal / enterprise_value,
     )
+
+
+def terminal_exit_multiple(drivers: Drivers, assumptions: Assumptions) -> float:
+    """The EV/EBIT multiple in the final forecast year implied by the Gordon terminal value.
+
+    A perpetual growth rate is an assumption wearing a formula: 2% and 3% look equally
+    reasonable written down, and value the business very differently. Restating the same
+    number as the exit multiple it implies puts it on a scale readers already have intuitions
+    about — an implied exit at 40x EBIT announces itself in a way that "3% forever" does not.
+    """
+    _require_feasible(assumptions)
+
+    flows = free_cash_flows(drivers, assumptions)
+    terminal_value = flows[-1] * (1.0 + assumptions.terminal_growth) / (
+        assumptions.wacc - assumptions.terminal_growth
+    )
+    final_revenue = drivers.revenue * (1.0 + assumptions.revenue_growth) ** assumptions.years
+    final_ebit = final_revenue * assumptions.ebit_margin
+    if final_ebit <= 0.0:
+        raise ValuationError("final-year EBIT is not positive; the exit multiple is undefined")
+    return terminal_value / final_ebit
