@@ -10,6 +10,7 @@ from vlab.dcf import assumptions_from, value
 from vlab.errors import DataError
 from vlab.fundamentals import drivers_from
 from vlab.pipeline import TERMINAL_GROWTH, convert_to_trading_currency, run
+from vlab.sensitivity import default_wacc_terminal_grid
 from vlab.universe import MARKET_INDEX, Company
 from vlab.wacc import compute_wacc
 
@@ -286,3 +287,36 @@ def test_a_single_companys_valuation_failure_does_not_abort_the_others(tmp_path:
     assert failures[0].name == "Hermes"
     assert failures[0].ticker == "RMS.PA"
     assert "growth" in failures[0].reason.lower()
+
+
+def test_richemonts_sensitivity_grids_are_converted_to_the_trading_currency(
+    tmp_path: Path,
+) -> None:
+    """IMPORTANT bug: the sensitivity grids are computed in the reporting currency (EUR),
+    same as dcf.value, but were never converted. Left as EUR, Richemont's grid cells sit next
+    to a CHF summary row -- a ~7% gap on the same page with nothing to explain it. They must
+    carry the same conversion as the summary row, using the same fetched rate.
+    """
+    results, _failures = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_fake_statement_fetcher,
+        price_fetcher=_fake_price_fetcher,
+    )
+
+    fx_rate = _PRICE_BY_TICKER["EURCHF=X"]
+    richemont_statements = _pipeline_statements("CFR.SW")
+    richemont_drivers = drivers_from(richemont_statements, "CFR.SW")
+    market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
+    stock_prices = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+    price_eur = _PRICE_BY_TICKER["CFR.SW"] / fx_rate
+    market_cap_eur = price_eur * richemont_drivers.shares
+    cost_of_capital = compute_wacc(
+        richemont_statements, "CFR.SW", richemont_drivers,
+        market_cap_eur, stock_prices, market_prices,
+    )
+    assumptions = assumptions_from(richemont_drivers, cost_of_capital.value, TERMINAL_GROWTH)
+    raw_grid_eur = default_wacc_terminal_grid(richemont_drivers, assumptions)
+
+    pd.testing.assert_frame_equal(
+        results["Richemont"].sensitivity, raw_grid_eur * fx_rate, check_exact=False, rtol=1e-6
+    )

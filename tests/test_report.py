@@ -119,6 +119,15 @@ def test_the_report_names_the_stated_assumptions() -> None:
     assert "5.00%" in html
 
 
+def test_the_sensitivity_grid_corner_is_labeled_with_its_currency() -> None:
+    # No grid carried a currency label at all, which is how a EUR grid sitting under a CHF
+    # summary row went unnoticed. Both companies here trade in EUR, so the label must say so.
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "WACC \\ terminal growth (EUR)" in html
+    assert "EBIT margin \\ revenue growth (EUR)" in html
+
+
 def test_the_report_carries_both_sensitivity_grids() -> None:
     # One grid varies the model, the other varies the business. A reader shown only the
     # first cannot tell which of the two the valuation is fragile to.

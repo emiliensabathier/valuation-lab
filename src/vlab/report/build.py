@@ -84,11 +84,16 @@ def _grid_table(table, corner: str) -> str:
 def _sensitivity_section(results) -> str:
     blocks = []
     for result in results.values():
+        currency = html_escape.escape(result.trading_currency)
         blocks.append(f"<h3>{html_escape.escape(result.name)}</h3>")
         blocks.append('<p class="note">Against the model:</p>')
-        blocks.append(_grid_table(result.sensitivity, "WACC \\ terminal growth"))
+        blocks.append(_grid_table(result.sensitivity, f"WACC \\ terminal growth ({currency})"))
         blocks.append('<p class="note">Against the business:</p>')
-        blocks.append(_grid_table(result.margin_sensitivity, "EBIT margin \\ revenue growth"))
+        blocks.append(
+            _grid_table(
+                result.margin_sensitivity, f"EBIT margin \\ revenue growth ({currency})"
+            )
+        )
     return "".join(blocks)
 
 

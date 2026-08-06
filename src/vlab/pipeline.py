@@ -157,8 +157,16 @@ def _value_company(
     assumptions = assumptions_from(drivers, cost_of_capital.value, TERMINAL_GROWTH)
     valuation = value(drivers, assumptions)
 
-    # The model works in the reporting currency; the price is quoted in the trading one.
+    # The model works in the reporting currency; the price is quoted in the trading one. The
+    # sensitivity grids get the same conversion, with this same fetched rate, so every number
+    # on the report page for this company sits in one currency.
     value_per_share = convert_to_trading_currency(valuation.value_per_share, company, rates)
+    sensitivity = _convert_grid_to_trading_currency(
+        default_wacc_terminal_grid(drivers, assumptions), company, rates
+    )
+    margin_sensitivity = _convert_grid_to_trading_currency(
+        default_margin_growth_grid(drivers, assumptions), company, rates
+    )
 
     return CompanyResult(
         name=company.name,
@@ -172,8 +180,8 @@ def _value_company(
         beta=cost_of_capital.beta,
         terminal_share=valuation.terminal_share,
         exit_multiple=terminal_exit_multiple(drivers, assumptions),
-        sensitivity=default_wacc_terminal_grid(drivers, assumptions),
-        margin_sensitivity=default_margin_growth_grid(drivers, assumptions),
+        sensitivity=sensitivity,
+        margin_sensitivity=margin_sensitivity,
     )
 
 
