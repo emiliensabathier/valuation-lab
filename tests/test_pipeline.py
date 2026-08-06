@@ -173,9 +173,11 @@ def test_run_associates_each_company_with_its_own_figures(tmp_path: Path) -> Non
     richemont_drivers = drivers_from(richemont_statements, "CFR.SW")
     market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
     stock_prices = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+    # market_cap must be in the reporting currency (EUR), same as gross debt on the balance
+    # sheet — the price quoted in CHF is converted back before it feeds WACC.
     cost_of_capital = compute_wacc(
         richemont_statements, "CFR.SW", richemont_drivers,
-        196.0 * _SHARES_BY_TICKER["CFR.SW"], stock_prices, market_prices,
+        (196.0 / fx_rate) * richemont_drivers.shares, stock_prices, market_prices,
     )
     assumptions = assumptions_from(richemont_drivers, cost_of_capital.value, TERMINAL_GROWTH)
     raw_eur_value_per_share = value(richemont_drivers, assumptions).value_per_share
@@ -186,3 +188,72 @@ def test_run_associates_each_company_with_its_own_figures(tmp_path: Path) -> Non
     # And that this is a genuine conversion, not a value that happens to match itself: the
     # unconverted euro figure and the reported franc figure must differ by roughly the rate.
     assert results["Richemont"].value_per_share != pytest.approx(raw_eur_value_per_share)
+
+
+def test_richemonts_wacc_uses_market_cap_in_the_reporting_currency_not_the_trading_one(
+    tmp_path: Path,
+) -> None:
+    """CRITICAL bug: pipeline.run() built market_cap from the CHF share price, then blended
+    it with Richemont's EUR gross debt inside compute_wacc — francs added to euros. Market
+    cap must be computed in EUR (the reporting currency, same as gross debt) before it ever
+    reaches compute_wacc.
+    """
+    results = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_fake_statement_fetcher,
+        price_fetcher=_fake_price_fetcher,
+    )
+
+    fx_rate = _PRICE_BY_TICKER["EURCHF=X"]
+    richemont_statements = _pipeline_statements("CFR.SW")
+    richemont_drivers = drivers_from(richemont_statements, "CFR.SW")
+    market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
+    stock_prices = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+
+    price_eur = _PRICE_BY_TICKER["CFR.SW"] / fx_rate
+    market_cap_eur = price_eur * richemont_drivers.shares
+
+    expected = compute_wacc(
+        richemont_statements, "CFR.SW", richemont_drivers,
+        market_cap_eur, stock_prices, market_prices,
+    )
+
+    assert results["Richemont"].wacc == pytest.approx(expected.value, rel=1e-9)
+
+
+def test_market_cap_uses_the_balance_sheet_share_count_not_infos_sharesoutstanding(
+    tmp_path: Path,
+) -> None:
+    """IMPORTANT bug: info['sharesOutstanding'] and the balance sheet's Ordinary Shares
+    Number can disagree (Richemont: 534.2M vs 587.9M in the real data). fundamentals.py
+    already divides equity value by the balance-sheet count, so pipeline.py must build
+    market_cap from that same count — otherwise WACC and the equity bridge run on two
+    different share counts for the same company.
+    """
+
+    def _mismatched_fetcher(ticker: str) -> Statements:
+        statements = _pipeline_statements(ticker)
+        if ticker == "MC.PA":
+            mismatched_info = dict(statements.info)
+            mismatched_info["sharesOutstanding"] = _SHARES_BY_TICKER["MC.PA"] * 1.5
+            statements = Statements(
+                statements.income, statements.cashflow, statements.balance, mismatched_info
+            )
+        return statements
+
+    results = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_mismatched_fetcher,
+        price_fetcher=_fake_price_fetcher,
+    )
+
+    lvmh_drivers = drivers_from(_pipeline_statements("MC.PA"), "MC.PA")
+    market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
+    stock_prices = _fake_price_fetcher(["MC.PA"], "5y", "1wk")["MC.PA"]
+    expected_market_cap = _PRICE_BY_TICKER["MC.PA"] * lvmh_drivers.shares
+    expected = compute_wacc(
+        _pipeline_statements("MC.PA"), "MC.PA", lvmh_drivers,
+        expected_market_cap, stock_prices, market_prices,
+    )
+
+    assert results["LVMH"].wacc == pytest.approx(expected.value, rel=1e-9)

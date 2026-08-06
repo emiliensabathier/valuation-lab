@@ -45,6 +45,25 @@ class CompanyResult:
     margin_sensitivity: pd.DataFrame
 
 
+def _fx_pair(company: Company) -> str:
+    return f"{company.reporting_currency}{company.trading_currency}=X"
+
+
+def _rate_for(company: Company, rates: dict[str, float]) -> float:
+    """Look up the fetched rate for a company that needs conversion, or raise.
+
+    Shared by every conversion below so a missing rate is one error message, not several
+    slightly different ones, and so nothing re-fetches what the pre-loop already fetched.
+    """
+    pair = _fx_pair(company)
+    if pair not in rates:
+        raise DataError(
+            f"{company.ticker} reports in {company.reporting_currency} and trades in "
+            f"{company.trading_currency}, but no {pair} rate was supplied"
+        )
+    return rates[pair]
+
+
 def convert_to_trading_currency(
     amount: float, company: Company, rates: dict[str, float]
 ) -> float:
@@ -56,14 +75,22 @@ def convert_to_trading_currency(
     """
     if not needs_conversion(company):
         return amount
+    return amount * _rate_for(company, rates)
 
-    pair = f"{company.reporting_currency}{company.trading_currency}=X"
-    if pair not in rates:
-        raise DataError(
-            f"{company.ticker} reports in {company.reporting_currency} and trades in "
-            f"{company.trading_currency}, but no {pair} rate was supplied"
-        )
-    return amount * rates[pair]
+
+def _convert_grid_to_trading_currency(
+    table: pd.DataFrame, company: Company, rates: dict[str, float]
+) -> pd.DataFrame:
+    """Convert a value-per-share sensitivity grid into the trading currency.
+
+    The grid is computed in the reporting currency, exactly like ``dcf.value``. Converting it
+    here — with the same rate already fetched for the summary row, not a fresh fetch — keeps
+    every number on the report page in one currency. NaN cells (infeasible combinations) stay
+    NaN under multiplication, so the "no meaning here" marker survives the conversion.
+    """
+    if not needs_conversion(company):
+        return table
+    return table * _rate_for(company, rates)
 
 
 def run(
@@ -100,7 +127,17 @@ def run(
 
         price = float(prices[company.ticker].iloc[-1])
         shares = float(statements.info.get("sharesOutstanding") or drivers.shares)
-        market_cap = price * shares
+
+        # market_cap must be in the reporting currency, the same currency gross debt is
+        # reported in on the balance sheet. Multiplying the trading-currency price by shares
+        # here would blend, say, a Swiss-franc market cap with euro debt inside compute_wacc
+        # — a unit error that looks like a plausible number and is not one. No silent default
+        # for the rate either: a currency-needing company's rate is guaranteed present because
+        # the pre-loop's unconditional fetch above already raised if it were missing.
+        price_in_reporting = (
+            price / _rate_for(company, rates) if needs_conversion(company) else price
+        )
+        market_cap = price_in_reporting * shares
 
         cost_of_capital = compute_wacc(
             statements, company.ticker, drivers, market_cap,
@@ -113,16 +150,6 @@ def run(
         value_per_share = convert_to_trading_currency(
             valuation.value_per_share, company, rates
         )
-        # No silent default here: a same-currency company never gets a rate entry (the
-        # pre-loop only fetches one when needs_conversion is true), so price_in_reporting
-        # is the price unchanged. A currency-needing company's rate is guaranteed present —
-        # the pre-loop's unconditional fetch above already raised if it were missing — so a
-        # direct index is honest about that guarantee instead of masking it behind a default.
-        if needs_conversion(company):
-            pair = f"{company.reporting_currency}{company.trading_currency}=X"
-            price_in_reporting = price / rates[pair]
-        else:
-            price_in_reporting = price
 
         results[company.name] = CompanyResult(
             name=company.name,
