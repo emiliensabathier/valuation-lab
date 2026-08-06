@@ -54,20 +54,32 @@ def assumptions_from(drivers: Drivers, wacc: float, terminal_growth: float) -> A
     )
 
 
-def free_cash_flows(drivers: Drivers, assumptions: Assumptions) -> list[float]:
-    """Project unlevered free cash flow over the explicit forecast period."""
-    flows: list[float] = []
+def _project(drivers: Drivers, assumptions: Assumptions) -> list[tuple[float, float]]:
+    """Project (revenue, EBIT) for each explicit forecast year.
+
+    The one place the growth compounding happens. Both ``free_cash_flows`` and
+    ``terminal_exit_multiple`` read the final year off this same list, instead of one of
+    them re-deriving the compounding with a second formula that could silently drift from
+    the first.
+    """
+    projected: list[tuple[float, float]] = []
     revenue = drivers.revenue
     for _ in range(assumptions.years):
         revenue *= 1.0 + assumptions.revenue_growth
         ebit = revenue * assumptions.ebit_margin
-        flows.append(
-            ebit * (1.0 - drivers.tax_rate)
-            + revenue * drivers.da_ratio
-            + revenue * drivers.capex_ratio
-            + revenue * drivers.nwc_ratio
-        )
-    return flows
+        projected.append((revenue, ebit))
+    return projected
+
+
+def free_cash_flows(drivers: Drivers, assumptions: Assumptions) -> list[float]:
+    """Project unlevered free cash flow over the explicit forecast period."""
+    return [
+        ebit * (1.0 - drivers.tax_rate)
+        + revenue * drivers.da_ratio
+        + revenue * drivers.capex_ratio
+        + revenue * drivers.nwc_ratio
+        for revenue, ebit in _project(drivers, assumptions)
+    ]
 
 
 def _require_feasible(assumptions: Assumptions) -> None:
@@ -125,8 +137,7 @@ def terminal_exit_multiple(drivers: Drivers, assumptions: Assumptions) -> float:
     val = value(drivers, assumptions)
     undiscounted_terminal = val.pv_terminal * (1.0 + assumptions.wacc) ** assumptions.years
 
-    final_revenue = drivers.revenue * (1.0 + assumptions.revenue_growth) ** assumptions.years
-    final_ebit = final_revenue * assumptions.ebit_margin
+    _final_revenue, final_ebit = _project(drivers, assumptions)[-1]
     if final_ebit <= 0.0:
         raise ValuationError("final-year EBIT is not positive; the exit multiple is undefined")
     return undiscounted_terminal / final_ebit

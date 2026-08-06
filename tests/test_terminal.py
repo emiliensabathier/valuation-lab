@@ -1,5 +1,6 @@
 import pytest
 
+import vlab.dcf as dcf_module
 from vlab.dcf import Assumptions, terminal_exit_multiple
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
@@ -60,3 +61,37 @@ def test_negative_ebit_margin_raises() -> None:
 
     with pytest.raises(ValuationError, match="final-year EBIT is not positive"):
         terminal_exit_multiple(drivers, assumptions)
+
+
+def test_terminal_exit_multiple_derives_final_year_ebit_from_the_shared_projection(
+    monkeypatch,
+) -> None:
+    """final_revenue/final_ebit used to re-derive the growth compounding that
+    free_cash_flows() already performs internally -- a second, independently written growth
+    formula inside the same module that could silently drift from the first. A spy on the
+    shared projection helper, called both from value()'s FCFF projection and from the final
+    year lookup, is what pins that terminal_exit_multiple reads off that one function rather
+    than recomputing its own compounding.
+    """
+    drivers = Drivers(
+        revenue=1000.0, revenue_growth=0.05, ebit_margin=0.20, tax_rate=0.25,
+        capex_ratio=0.0, da_ratio=0.0, nwc_ratio=0.0,
+        net_debt=0.0, minority_interest=0.0, shares=100.0,
+    )
+    assumptions = Assumptions(0.05, 0.20, 0.02, 0.10, 5)
+
+    calls: list[tuple[Drivers, Assumptions]] = []
+    original_project = dcf_module._project
+
+    def _spy(passed_drivers: Drivers, passed_assumptions: Assumptions):
+        calls.append((passed_drivers, passed_assumptions))
+        return original_project(passed_drivers, passed_assumptions)
+
+    monkeypatch.setattr(dcf_module, "_project", _spy)
+
+    terminal_exit_multiple(drivers, assumptions)
+
+    # Once through value() -> free_cash_flows(), once directly for the final-year lookup.
+    # Both go through the same function, not a second independently written formula.
+    assert len(calls) == 2
+    assert all(passed_drivers is drivers for passed_drivers, _ in calls)
