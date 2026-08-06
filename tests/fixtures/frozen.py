@@ -11,6 +11,12 @@ from vlab.data.loader import Statements
 
 FIXTURES = Path(__file__).parent
 
+# The date this fixture's statements, prices and FX rates were pulled from the data
+# provider. There is no live re-fetch to compare against at test time, so this is the only
+# record of provenance: a reader who wants to know how fresh the frozen numbers are has
+# nowhere else to look. Update it when scripts/build_fixture.py is re-run deliberately.
+CAPTURED = "2026-08-06"
+
 
 def _read(path: Path) -> pd.DataFrame:
     frame = pd.read_csv(path, index_col=0)
