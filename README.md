@@ -19,12 +19,15 @@ five years of weekly returns against the Euro Stoxx 50.
 
 Full report with charts and sensitivity grids: [`reports/valuation.html`](reports/valuation.html).
 
-These figures come from a specific frozen data pull captured 2026-08-06
-(`tests/fixtures/frozen.py`, `CAPTURED`), not a live fetch made while you are reading this. The
-regression suite replays the whole pipeline against that frozen pull and checks the numbers
-above reproduce exactly. A live `--refresh` does not: it moves Richemont by a few cents from
-provider-side rounding noise in the price feed, so "reproducible" describes the frozen replay,
-not a fresh run.
+These figures were generated on 2026-08-06 from a cached data pull, not fetched live while you
+are reading this. A committed fixture (`tests/fixtures/frozen.py`, `CAPTURED = "2026-08-06"`)
+freezes that same pull, and the regression suite replays the whole pipeline against it offline,
+checking every figure to a tight relative tolerance (1e-9 for arithmetic, looser for the
+root-found implied growth). Re-running with `--refresh` reproduces the method, not the exact
+cents: Richemont's price is FX-converted from EUR to CHF, and a fresh exchange-rate fetch moves
+its modelled value and implied growth by a few cents — enough to show up in the second decimal
+above, not enough to change the conclusion. The other three companies reproduce exactly across
+both pulls.
 
 ## The point
 
@@ -75,7 +78,8 @@ Stated because they matter more than the headline figures.
 - **No segment build, no sum-of-the-parts.** These are conglomerate-ish businesses valued as
   single entities.
 - **The published figures are a frozen pull, not a live guarantee.** See the note under
-  Results: a live `--refresh` reproduces the method, not the exact cents.
+  Results: a live `--refresh` reproduces the method exactly for three of the four companies,
+  and Richemont's FX-converted figures to within a few cents.
 
 ## Running it
 
