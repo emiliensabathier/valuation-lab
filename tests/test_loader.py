@@ -22,6 +22,31 @@ def _statements(revenue: float = 100.0) -> Statements:
     )
 
 
+def _statements_unequal_years() -> Statements:
+    """Income and cashflow cover three years; the balance sheet covers only two.
+
+    This is the real shape reported for Kering and Richemont: yfinance's balance sheet
+    history is one year shorter than its income and cashflow history. All three frames are
+    newest-first, matching how a fresh fetch actually arrives.
+    """
+    columns = pd.DatetimeIndex(["2025-12-31", "2024-12-31", "2023-12-31"])
+    return Statements(
+        income=pd.DataFrame(
+            {columns[0]: [100.0], columns[1]: [90.0], columns[2]: [80.0]},
+            index=["Total Revenue"],
+        ),
+        cashflow=pd.DataFrame(
+            {columns[0]: [-5.0], columns[1]: [-4.0], columns[2]: [-3.0]},
+            index=["Capital Expenditure"],
+        ),
+        balance=pd.DataFrame(
+            {columns[0]: [20.0], columns[1]: [18.0]},
+            index=["Total Debt"],
+        ),
+        info={"currency": "EUR", "financialCurrency": "EUR"},
+    )
+
+
 class RecordingFetcher:
     """Fake fetcher: returns canned statements and counts how often it is called."""
 
@@ -91,6 +116,23 @@ def test_a_cached_read_returns_the_same_frames_as_a_fresh_one(tmp_path: Path) ->
     assert fetcher.calls == 1
     pd.testing.assert_index_equal(cached.income.columns, fresh.income.columns)
     pd.testing.assert_frame_equal(cached.income, fresh.income)
+
+
+def test_a_cached_read_keeps_column_order_when_statement_shapes_differ(tmp_path: Path) -> None:
+    # _statements() gives all three frames the same two years, which never reaches the
+    # union/sort path in pd.concat. The real Kering and Richemont statements have a balance
+    # sheet one year shorter than income and cashflow, which does: pd.concat's column union
+    # sorts the mismatched columns ascending unless told not to, so a cached read came back
+    # oldest-first while the fresh fetch that produced it was newest-first. Every driver that
+    # reads .iloc[0] as "the latest year" then reads the wrong end of the history.
+    fetcher = RecordingFetcher(_statements_unequal_years())
+
+    fresh = load_statements("KER.PA", cache_dir=tmp_path, fetcher=fetcher)
+    cached = load_statements("KER.PA", cache_dir=tmp_path, fetcher=fetcher)
+
+    assert fetcher.calls == 1
+    pd.testing.assert_index_equal(cached.income.columns, fresh.income.columns)
+    assert list(cached.income.columns) == list(fresh.income.columns)
 
 
 def test_a_stale_cache_entry_is_refetched(tmp_path: Path) -> None:

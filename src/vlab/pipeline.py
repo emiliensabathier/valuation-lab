@@ -113,9 +113,16 @@ def run(
         value_per_share = convert_to_trading_currency(
             valuation.value_per_share, company, rates
         )
-        price_in_reporting = price / rates.get(
-            f"{company.reporting_currency}{company.trading_currency}=X", 1.0
-        )
+        # No silent default here: a same-currency company never gets a rate entry (the
+        # pre-loop only fetches one when needs_conversion is true), so price_in_reporting
+        # is the price unchanged. A currency-needing company's rate is guaranteed present —
+        # the pre-loop's unconditional fetch above already raised if it were missing — so a
+        # direct index is honest about that guarantee instead of masking it behind a default.
+        if needs_conversion(company):
+            pair = f"{company.reporting_currency}{company.trading_currency}=X"
+            price_in_reporting = price / rates[pair]
+        else:
+            price_in_reporting = price
 
         results[company.name] = CompanyResult(
             name=company.name,

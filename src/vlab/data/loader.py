@@ -101,12 +101,18 @@ def _write_cache(cache_dir: Path, ticker: str, statements: Statements) -> None:
     cache_dir.mkdir(parents=True, exist_ok=True)
     data_path, meta_path = _paths(cache_dir, ticker)
 
+    # sort=False matters here: when the three frames don't share the same columns — the
+    # balance sheet is routinely one year shorter than income and cashflow — pandas' default
+    # union sorts the mismatched DatetimeIndex ascending, silently reversing a newest-first
+    # fetch into oldest-first on every cached read. Every driver that reads .iloc[0] as "the
+    # latest year" would then read the wrong end of the history.
     stacked = pd.concat(
         {
             "income": statements.income,
             "cashflow": statements.cashflow,
             "balance": statements.balance,
-        }
+        },
+        sort=False,
     )
     stacked.columns = [str(column) for column in stacked.columns]
     stacked.to_parquet(data_path)
