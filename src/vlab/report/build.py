@@ -110,8 +110,8 @@ def build_report(results, generated_on: str) -> str:
         f"{html_escape.escape(generated_on)}.</p>",
         '<div class="caveat"><strong>What this does not say.</strong> A reverse discounted '
         "cash flow does not say a share is expensive. It says what the market assumes. "
-        "Judging whether 11% growth for five years is plausible for a luxury house remains "
-        "an analyst's work, not a model's.</div>",
+        "Judging whether the implied growth is plausible for a given house is an analyst's "
+        "work, not a model's.</div>",
         "<h2>Summary</h2>",
         _summary_table(results),
         "<h2>Implied against delivered growth</h2>",

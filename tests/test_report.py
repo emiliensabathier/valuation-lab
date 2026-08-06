@@ -101,6 +101,16 @@ def test_the_report_states_what_a_reverse_dcf_does_not_prove() -> None:
     assert "does not say" in html
 
 
+def test_the_caveat_does_not_invent_a_growth_figure() -> None:
+    # A draft leftover claimed "11% growth" as if it were a fact true of every company. No
+    # company in the universe implies 11%, so the caveat must speak generally instead of
+    # citing a number that belongs to none of them.
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "11%" not in html
+    assert "the implied growth" in html.lower()
+
+
 def test_the_report_names_the_stated_assumptions() -> None:
     html = build_report(_results(), generated_on="2026-08-06")
 
