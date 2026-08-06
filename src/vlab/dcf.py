@@ -122,12 +122,11 @@ def terminal_exit_multiple(drivers: Drivers, assumptions: Assumptions) -> float:
     """
     _require_feasible(assumptions)
 
-    flows = free_cash_flows(drivers, assumptions)
-    terminal_value = flows[-1] * (1.0 + assumptions.terminal_growth) / (
-        assumptions.wacc - assumptions.terminal_growth
-    )
+    val = value(drivers, assumptions)
+    undiscounted_terminal = val.pv_terminal * (1.0 + assumptions.wacc) ** assumptions.years
+
     final_revenue = drivers.revenue * (1.0 + assumptions.revenue_growth) ** assumptions.years
     final_ebit = final_revenue * assumptions.ebit_margin
     if final_ebit <= 0.0:
         raise ValuationError("final-year EBIT is not positive; the exit multiple is undefined")
-    return terminal_value / final_ebit
+    return undiscounted_terminal / final_ebit
