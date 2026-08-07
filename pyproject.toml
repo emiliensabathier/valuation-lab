@@ -24,8 +24,6 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["network: hits a live API, excluded from the default run"]
-addopts = "-m 'not network'"
 
 [tool.ruff]
 line-length = 100
