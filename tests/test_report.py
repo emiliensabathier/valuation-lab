@@ -23,6 +23,10 @@ class _Result:
     normalized_growth: float
     wacc: float
     beta: float
+    cost_of_equity: float
+    cost_of_debt: float
+    equity_weight: float
+    debt_weight: float
     terminal_share: float
     exit_multiple: float
     sensitivity: pd.DataFrame
@@ -43,11 +47,18 @@ def _results() -> dict[str, _Result]:
     table = pd.DataFrame([[100.0, 110.0], [90.0, 95.0]], index=[0.08, 0.09], columns=[0.01, 0.02])
     margins = pd.DataFrame([[80.0, 95.0], [110.0, 130.0]], index=[0.18, 0.22], columns=[0.03, 0.07])
     return {
-        "LVMH": _Result("LVMH", "MC.PA", "EUR", "EUR", 481.45, 520.0, 0.041, 0.062, 0.083, 0.84,
-                        0.71, 14.2, table, margins, _drivers(0.062, 0.24, 5_000_000_000.0)),
-        "Hermes": _Result("Hermes", "RMS.PA", "EUR", "EUR", 2100.0, 1600.0, 0.112, 0.089, 0.079,
-                          0.71, 0.78, 26.9, table, margins,
-                          _drivers(0.089, 0.40, -1_000_000_000.0)),
+        "LVMH": _Result(
+            "LVMH", "MC.PA", "EUR", "EUR", 481.45, 520.0, 0.041, 0.062, 0.083, 0.84,
+            cost_of_equity=0.095, cost_of_debt=0.030, equity_weight=0.85, debt_weight=0.15,
+            terminal_share=0.71, exit_multiple=14.2, sensitivity=table, margin_sensitivity=margins,
+            drivers=_drivers(0.062, 0.24, 5_000_000_000.0),
+        ),
+        "Hermes": _Result(
+            "Hermes", "RMS.PA", "EUR", "EUR", 2100.0, 1600.0, 0.112, 0.089, 0.079, 0.71,
+            cost_of_equity=0.088, cost_of_debt=0.025, equity_weight=0.95, debt_weight=0.05,
+            terminal_share=0.78, exit_multiple=26.9, sensitivity=table, margin_sensitivity=margins,
+            drivers=_drivers(0.089, 0.40, -1_000_000_000.0),
+        ),
     }
 
 
@@ -148,6 +159,33 @@ def test_the_drivers_table_shows_what_each_valuation_is_built_from() -> None:
     assert "-1.00bn EUR" in html  # Hermes's net debt (net cash, sign preserved)
 
 
+def test_the_drivers_table_shows_da_and_working_capital_ratios() -> None:
+    # A reader cannot recompute free cash flow -- EBIT x (1 - tax) + D&A + capex + change in
+    # working capital -- from the Drivers table without seeing all four of its non-EBIT
+    # components; capex alone left two of the six pieces of the sum invisible.
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "D&amp;A" in html
+    assert "Change in WC" in html
+    assert "6.00%" in html  # the shared D&A ratio from _drivers()
+    assert "-1.00%" in html  # the shared change-in-working-capital ratio from _drivers()
+
+
+def test_the_wacc_bridge_shows_the_cost_of_capital_components() -> None:
+    # "WACC computed, not assumed" is a headline claim; a reader could not check it without
+    # seeing cost of equity, cost of debt and the weights the WACC column was blended from.
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "<h2>WACC bridge</h2>" in html
+    assert "Cost of debt (pre-tax)" in html
+    assert "Cost of debt (after-tax)" in html
+    assert "9.50%" in html  # LVMH's cost of equity
+    assert "3.00%" in html  # LVMH's pre-tax cost of debt
+    assert "2.19%" in html  # LVMH's after-tax cost of debt: 3.00% x (1 - 27%)
+    assert "85.00%" in html  # LVMH's equity weight
+    assert "15.00%" in html  # LVMH's debt weight
+
+
 def test_a_company_with_no_fiscal_years_recorded_shows_not_available() -> None:
     # Drivers.fiscal_years defaults to an empty tuple for every hand-built fixture across the
     # test suite that predates the field. The report must not crash or print an empty range
@@ -167,8 +205,9 @@ def test_kerings_valuation_gap_is_explained_when_kering_is_present() -> None:
     kering_drivers = _drivers(-0.13, 0.18, 2_000_000_000.0)
     results["Kering"] = _Result(
         "Kering", "KER.PA", "EUR", "EUR", 289.75, 36.54, 0.0798, -0.13, 0.0731, 1.36,
-        0.71, 14.5, results["LVMH"].sensitivity, results["LVMH"].margin_sensitivity,
-        kering_drivers,
+        cost_of_equity=0.075, cost_of_debt=0.0343, equity_weight=0.662, debt_weight=0.338,
+        terminal_share=0.71, exit_multiple=14.5, sensitivity=results["LVMH"].sensitivity,
+        margin_sensitivity=results["LVMH"].margin_sensitivity, drivers=kering_drivers,
     )
 
     html = build_report(results, generated_on="2026-08-06")
@@ -248,14 +287,7 @@ def test_a_nan_cell_in_the_sensitivity_grid_is_shown_as_a_dash_not_a_number() ->
     nan_table = pd.DataFrame(
         [[120.0, 130.0], [np.nan, 140.0]], index=[0.08, 0.02], columns=[0.01, 0.02]
     )
-    results["LVMH"] = _Result(
-        results["LVMH"].name, results["LVMH"].ticker, results["LVMH"].reporting_currency,
-        results["LVMH"].trading_currency,
-        results["LVMH"].price, results["LVMH"].value_per_share, results["LVMH"].implied_growth,
-        results["LVMH"].normalized_growth, results["LVMH"].wacc, results["LVMH"].beta,
-        results["LVMH"].terminal_share, results["LVMH"].exit_multiple, nan_table,
-        results["LVMH"].margin_sensitivity, results["LVMH"].drivers,
-    )
+    results["LVMH"] = replace(results["LVMH"], sensitivity=nan_table)
 
     html = build_report(results, generated_on="2026-08-06")
 

@@ -34,6 +34,10 @@ class CompanyResult:
     ``reporting_currency`` -- carried through so the report can show a reader what the model
     is actually pricing (revenue, margin, tax rate, capex ratio, net debt, fiscal years), not
     only what it concludes.
+
+    ``cost_of_equity``, ``cost_of_debt``, ``equity_weight`` and ``debt_weight`` are carried
+    through from ``wacc.Wacc`` so the report can publish the WACC bridge, not only the blended
+    figure -- ``cost_of_debt`` is the **pre-tax** rate, exactly as on ``Wacc``.
     """
 
     name: str
@@ -46,6 +50,10 @@ class CompanyResult:
     normalized_growth: float
     wacc: float
     beta: float
+    cost_of_equity: float
+    cost_of_debt: float
+    equity_weight: float
+    debt_weight: float
     terminal_share: float
     exit_multiple: float
     sensitivity: pd.DataFrame
@@ -230,6 +238,10 @@ def _value_company(
         normalized_growth=drivers.revenue_growth,
         wacc=cost_of_capital.value,
         beta=cost_of_capital.beta,
+        cost_of_equity=cost_of_capital.cost_of_equity,
+        cost_of_debt=cost_of_capital.cost_of_debt,
+        equity_weight=cost_of_capital.equity_weight,
+        debt_weight=cost_of_capital.debt_weight,
         terminal_share=valuation.terminal_share,
         exit_multiple=terminal_exit_multiple(drivers, assumptions),
         sensitivity=sensitivity,

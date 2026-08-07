@@ -82,9 +82,13 @@ def _year_range(fiscal_years: tuple[str, ...]) -> str:
 def _drivers_table(results) -> str:
     """The normalized inputs behind every valuation, not only its conclusion.
 
-    A reader who cannot see revenue, margin, tax rate, the capex ratio, net debt and the
-    fiscal years they were normalized over has no way to check a single figure in the summary
-    table above -- only to trust it.
+    A reader who cannot see revenue, margin, tax rate, all three of capex, D&A and the change
+    in working capital (each as a ratio to revenue), and net debt -- plus the fiscal years they
+    were normalized over -- has no way to check a single figure in the summary table above --
+    only to trust it. Free cash flow is the plain sum of these ratios applied to revenue and
+    EBIT: ``EBIT x (1 - tax) + D&A + capex + change in working capital`` (see ``dcf.py``);
+    capex and the working-capital ratio are negative here exactly when they consume cash, so a
+    reader can reproduce a value per share from this row alone.
     """
     rows = []
     for result in results.values():
@@ -97,11 +101,44 @@ def _drivers_table(results) -> str:
             _pct(drivers.ebit_margin),
             _pct(drivers.tax_rate),
             _pct(drivers.capex_ratio),
+            _pct(drivers.da_ratio),
+            _pct(drivers.nwc_ratio),
             f"{_bn(drivers.net_debt)} {currency}",
         ])
     return _table(
         ["Company", "Fiscal years", "Revenue (latest)", "EBIT margin (normalized)",
-         "Tax rate (normalized)", "Capex / revenue (normalized)", "Net debt (latest)"],
+         "Tax rate (normalized)", "Capex / revenue (normalized)",
+         "D&A / revenue (normalized)", "Change in WC / revenue (normalized)",
+         "Net debt (latest)"],
+        rows,
+    )
+
+
+def _wacc_table(results) -> str:
+    """The cost-of-capital bridge behind the WACC column in the Summary table.
+
+    ``cost_of_debt`` is published **pre-tax**, exactly as ``wacc.Wacc`` carries it, alongside
+    the after-tax figure actually blended into WACC -- so a reader applying the tax shield a
+    second time is a choice they would have to make deliberately, not a trap the table sets for
+    them. Weighting the two costs by ``equity_weight`` and ``debt_weight`` reproduces the WACC
+    column above.
+    """
+    rows = []
+    for result in results.values():
+        after_tax_cost_of_debt = result.cost_of_debt * (1.0 - result.drivers.tax_rate)
+        rows.append([
+            result.name,
+            _num(result.beta),
+            _pct(result.cost_of_equity),
+            _pct(result.cost_of_debt),
+            _pct(after_tax_cost_of_debt),
+            _pct(result.equity_weight),
+            _pct(result.debt_weight),
+            _pct(result.wacc),
+        ])
+    return _table(
+        ["Company", "Beta", "Cost of equity", "Cost of debt (pre-tax)",
+         "Cost of debt (after-tax)", "Equity weight", "Debt weight", "WACC"],
         rows,
     )
 
@@ -233,10 +270,20 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
     sections += [
         "<h2>Drivers</h2>",
         '<p class="note">What each valuation is actually built from. Revenue and net debt '
-        "are the latest reported fiscal year; EBIT margin, tax rate and the capex ratio are "
-        "medians across the fiscal years listed. Revenue growth is normalized the same way "
-        "and shown in the Summary table above, not repeated here.</p>",
+        "are the latest reported fiscal year; EBIT margin, tax rate, and the capex, D&amp;A "
+        "and change-in-working-capital ratios are medians across the fiscal years listed. "
+        "Revenue growth is normalized the same way and shown in the Summary table above, not "
+        "repeated here. Capex and the change-in-working-capital ratio are negative exactly "
+        "when they consume cash; D&amp;A is positive, added back as a non-cash expense. Free "
+        "cash flow is the plain sum: EBIT &times; (1 &minus; tax) + D&amp;A + capex + change "
+        "in working capital.</p>",
         _drivers_table(results),
+        "<h2>WACC bridge</h2>",
+        '<p class="note">The cost of equity and the cost of debt behind the WACC column in '
+        "the Summary table, at the market-equity and book-debt weights they are blended at. "
+        "Cost of debt is published pre-tax, as reported, alongside the after-tax figure "
+        "actually used in the blend, so the tax shield is not counted twice.</p>",
+        _wacc_table(results),
         "<h2>Implied against delivered growth</h2>",
         implied_growth_chart(implied, normalized),
         "<h2>Price against model</h2>",
