@@ -11,6 +11,11 @@ import io
 import matplotlib
 
 matplotlib.use("Agg")
+# Matplotlib's SVG backend salts every clip-path id with a random string by default, so two
+# renders of the same figure are never byte-identical. A fixed salt makes them so -- which is
+# what lets a test compare the committed report against a fresh render from the frozen
+# fixture without tripping on ids that changed for no reason connected to the data.
+matplotlib.rcParams["svg.hashsalt"] = "vlab-valuation-lab"
 from matplotlib.figure import Figure  # noqa: E402
 
 FIGSIZE = (9.0, 4.0)
@@ -18,9 +23,14 @@ DPI = 110
 
 
 def figure_to_svg(fig: Figure) -> str:
-    """Serialize a figure as inline SVG markup, stripped of its XML preamble."""
+    """Serialize a figure as inline SVG markup, stripped of its XML preamble.
+
+    ``metadata={"Date": None}`` suppresses the embedded creation timestamp, for the same
+    reason as the fixed hash salt above: without it, the SVG carries the wall-clock time it
+    was rendered, and the report would never reproduce byte-for-byte even from unchanged data.
+    """
     buffer = io.StringIO()
-    fig.savefig(buffer, format="svg", bbox_inches="tight")
+    fig.savefig(buffer, format="svg", bbox_inches="tight", metadata={"Date": None})
     markup = buffer.getvalue()
     return markup[markup.index("<svg") :]
 
