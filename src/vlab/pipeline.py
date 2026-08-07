@@ -126,11 +126,13 @@ def _stock_prices_for_beta(
     """The company's own price series, converted into its reporting currency.
 
     ``levered_beta`` regresses this against the market index, which is quoted in euros.
-    Richemont trades in Swiss francs but reports (and is discounted) in euros: regressing its
-    unconverted CHF returns against a EUR index measures Richemont's co-movement with the
-    index blended with the franc's co-movement with it -- not Richemont's alone. The franc
-    tends to firm in risk-off periods, when the index falls, so the uncorrected regression
-    biases the beta down, and with it the WACC.
+    Richemont trades in Swiss francs but reports (and is discounted) in euros: a price quoted
+    in a foreign currency carries that currency's own co-movement with the index on top of the
+    business's own, and betas compose additively through the exchange rate (P_CHF = P_EUR ×
+    EURCHF, so beta_CHF ~= beta_EUR + beta_EURCHF). The franc firms when the index falls
+    (beta_EURCHF ~= +0.10 against the Euro Stoxx 50), so regressing the unconverted CHF returns
+    against the EUR index *inflates* the measured beta by roughly that amount, and with it the
+    WACC -- which is exactly why converting first moves Richemont's beta down.
 
     This needs the *whole* FX history, at the same weekly cadence as the equity prices --
     unlike the single latest rate ``_rate_for`` uses to convert the final value per share,
