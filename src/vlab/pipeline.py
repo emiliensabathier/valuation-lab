@@ -115,6 +115,43 @@ def _convert_grid_to_trading_currency(
     return table * _rate_for(company, rates)
 
 
+def _stock_prices_for_beta(
+    company: Company,
+    stock_prices: pd.Series,
+    *,
+    cache_dir: Path,
+    refresh: bool,
+    price_fetcher: PriceFetcher | None,
+) -> pd.Series:
+    """The company's own price series, converted into its reporting currency.
+
+    ``levered_beta`` regresses this against the market index, which is quoted in euros.
+    Richemont trades in Swiss francs but reports (and is discounted) in euros: regressing its
+    unconverted CHF returns against a EUR index measures Richemont's co-movement with the
+    index blended with the franc's co-movement with it -- not Richemont's alone. The franc
+    tends to firm in risk-off periods, when the index falls, so the uncorrected regression
+    biases the beta down, and with it the WACC.
+
+    This needs the *whole* FX history, at the same weekly cadence as the equity prices --
+    unlike the single latest rate ``_rate_for`` uses to convert the final value per share,
+    which is a point-in-time conversion of one number, not a regression input.
+    """
+    if not needs_conversion(company):
+        return stock_prices
+
+    pair = _fx_pair(company)
+    fx_history = load_prices(
+        [pair], cache_dir=cache_dir, refresh=refresh, fetcher=price_fetcher
+    )[pair]
+    aligned = pd.concat([stock_prices, fx_history], axis=1, join="inner").dropna()
+    if aligned.empty:
+        raise DataError(
+            f"{company.ticker}: no dates overlap between its price series and the {pair} "
+            f"history; cannot convert to {company.reporting_currency} for the beta regression"
+        )
+    return aligned.iloc[:, 0] / aligned.iloc[:, 1]
+
+
 def _value_company(
     company: Company,
     prices: pd.DataFrame,
@@ -158,9 +195,13 @@ def _value_company(
     price_in_reporting = price / _rate_for(company, rates) if needs_conversion(company) else price
     market_cap = price_in_reporting * shares
 
+    stock_prices = _stock_prices_for_beta(
+        company, prices[company.ticker],
+        cache_dir=cache_dir, refresh=refresh, price_fetcher=price_fetcher,
+    )
     cost_of_capital = compute_wacc(
         statements, company.ticker, drivers, market_cap,
-        prices[company.ticker], market_prices,
+        stock_prices, market_prices,
     )
     assumptions = assumptions_from(drivers, cost_of_capital.value, TERMINAL_GROWTH)
     valuation = value(drivers, assumptions)

@@ -15,7 +15,7 @@ FIXTURES = Path(__file__).parent
 # provider. There is no live re-fetch to compare against at test time, so this is the only
 # record of provenance: a reader who wants to know how fresh the frozen numbers are has
 # nowhere else to look. Update it when scripts/build_fixture.py is re-run deliberately.
-CAPTURED = "2026-08-06"
+CAPTURED = "2026-08-07"
 
 
 def _read(path: Path) -> pd.DataFrame:

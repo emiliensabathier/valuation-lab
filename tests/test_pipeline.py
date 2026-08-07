@@ -12,7 +12,7 @@ from vlab.fundamentals import drivers_from
 from vlab.pipeline import TERMINAL_GROWTH, convert_to_trading_currency, run
 from vlab.sensitivity import default_wacc_terminal_grid
 from vlab.universe import MARKET_INDEX, Company
-from vlab.wacc import compute_wacc
+from vlab.wacc import compute_wacc, levered_beta
 
 
 def test_a_same_currency_company_is_returned_unchanged() -> None:
@@ -109,6 +109,17 @@ def _fake_statement_fetcher(ticker: str) -> Statements:
     return _pipeline_statements(ticker)
 
 
+EQUITY_MARKET_WEIGHT = 0.7
+# EURCHF=X gets its own, deliberately different exposure to the shared market factor rather
+# than reusing the equities' 0.7 -- a real FX pair's co-movement with an equity index has
+# nothing to do with a stock's own beta. A distinct, negative weight is also what makes
+# converting CFR.SW's price series into EUR before the beta regression a genuine change of
+# currency instead of a no-op: dividing two series built from the *same* market exposure would
+# cancel most of it out and leave a beta near zero, which would prove the conversion runs but
+# not that it produces a sane, economically plausible number.
+FX_MARKET_WEIGHT = -0.1
+
+
 def _fake_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.DataFrame:
     # Real variance and correlation for the beta calculation over most of the series, but
     # the last observation of every column is forced to a known constant so the "current
@@ -131,10 +142,22 @@ def _fake_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.Da
         seed = zlib.crc32(ticker.encode())
         idiosyncratic = np.random.default_rng(seed).normal(0.0, 0.01, n)
         level = _PRICE_BY_TICKER[ticker]
-        series = level * np.cumprod(1 + 0.7 * market_returns + idiosyncratic)
+        weight = FX_MARKET_WEIGHT if ticker == "EURCHF=X" else EQUITY_MARKET_WEIGHT
+        series = level * np.cumprod(1 + weight * market_returns + idiosyncratic)
         series[-1] = level
         data[ticker] = series
     return pd.DataFrame(data, index=dates)
+
+
+def _cfr_stock_prices_in_eur() -> pd.Series:
+    """Richemont's CHF price series, converted into EUR the same way pipeline.py's
+    ``_stock_prices_for_beta`` does: divided, date by date, by the full EURCHF history, keeping
+    only the dates the two series share.
+    """
+    stock_chf = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+    fx_history = _fake_price_fetcher(["EURCHF=X"], "5y", "1wk")["EURCHF=X"]
+    aligned = pd.concat([stock_chf, fx_history], axis=1, join="inner").dropna()
+    return aligned.iloc[:, 0] / aligned.iloc[:, 1]
 
 
 def test_run_associates_each_company_with_its_own_figures(tmp_path: Path) -> None:
@@ -174,9 +197,11 @@ def test_run_associates_each_company_with_its_own_figures(tmp_path: Path) -> Non
     richemont_statements = _pipeline_statements("CFR.SW")
     richemont_drivers = drivers_from(richemont_statements, "CFR.SW")
     market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
-    stock_prices = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+    stock_prices = _cfr_stock_prices_in_eur()
     # market_cap must be in the reporting currency (EUR), same as gross debt on the balance
-    # sheet — the price quoted in CHF is converted back before it feeds WACC.
+    # sheet — the price quoted in CHF is converted back before it feeds WACC. The beta
+    # regression also needs both sides in one currency, so the stock series is converted here
+    # too, the same way pipeline.py converts it before calling compute_wacc.
     cost_of_capital = compute_wacc(
         richemont_statements, "CFR.SW", richemont_drivers,
         (196.0 / fx_rate) * richemont_drivers.shares, stock_prices, market_prices,
@@ -210,7 +235,7 @@ def test_richemonts_wacc_uses_market_cap_in_the_reporting_currency_not_the_tradi
     richemont_statements = _pipeline_statements("CFR.SW")
     richemont_drivers = drivers_from(richemont_statements, "CFR.SW")
     market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
-    stock_prices = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+    stock_prices = _cfr_stock_prices_in_eur()
 
     price_eur = _PRICE_BY_TICKER["CFR.SW"] / fx_rate
     market_cap_eur = price_eur * richemont_drivers.shares
@@ -307,7 +332,7 @@ def test_richemonts_sensitivity_grids_are_converted_to_the_trading_currency(
     richemont_statements = _pipeline_statements("CFR.SW")
     richemont_drivers = drivers_from(richemont_statements, "CFR.SW")
     market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
-    stock_prices = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+    stock_prices = _cfr_stock_prices_in_eur()
     price_eur = _PRICE_BY_TICKER["CFR.SW"] / fx_rate
     market_cap_eur = price_eur * richemont_drivers.shares
     cost_of_capital = compute_wacc(
@@ -320,3 +345,60 @@ def test_richemonts_sensitivity_grids_are_converted_to_the_trading_currency(
     pd.testing.assert_frame_equal(
         results["Richemont"].sensitivity, raw_grid_eur * fx_rate, check_exact=False, rtol=1e-6
     )
+
+
+def test_richemonts_beta_is_computed_in_a_single_currency_not_two(tmp_path: Path) -> None:
+    """IMPORTANT bug: levered_beta regressed Richemont's CHF-denominated returns against the
+    EUR-denominated Euro Stoxx 50 -- measuring Richemont's co-movement with the index blended
+    with the franc's co-movement with it, not Richemont's alone. The stock's own price series
+    must be converted into its reporting currency (EUR, matching the index) before the
+    regression, using the full EURCHF history -- not just the single latest rate used to
+    convert the final value per share.
+    """
+    results, _failures = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_fake_statement_fetcher,
+        price_fetcher=_fake_price_fetcher,
+    )
+
+    market_prices = _fake_price_fetcher([MARKET_INDEX], "5y", "1wk")[MARKET_INDEX]
+    stock_prices_chf = _fake_price_fetcher(["CFR.SW"], "5y", "1wk")["CFR.SW"]
+    stock_prices_eur = _cfr_stock_prices_in_eur()
+
+    correct_beta = levered_beta(stock_prices_eur, market_prices)
+    currency_mixed_beta = levered_beta(stock_prices_chf, market_prices)
+
+    # Proof the FX series has a genuine effect: converting first changes the number. If this
+    # assertion ever fails, the synthetic fixture's FX series stopped varying and no longer
+    # exercises the bug.
+    assert correct_beta != pytest.approx(currency_mixed_beta)
+
+    assert results["Richemont"].beta == pytest.approx(correct_beta, rel=1e-9)
+
+
+def test_a_non_overlapping_fx_history_for_the_beta_raises_rather_than_falling_back(
+    tmp_path: Path,
+) -> None:
+    """No silent fallback: if a cross-currency company's FX history shares no date with its
+    own price series, the conversion must raise -- not silently fall back to regressing the
+    unconverted, currency-mixed series, which would reintroduce the exact bug this guards
+    against.
+    """
+
+    def _disjoint_fx_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.DataFrame:
+        frame = _fake_price_fetcher(tickers, period, interval)
+        if "EURCHF=X" in frame.columns:
+            frame = frame.copy()
+            frame.index = frame.index - pd.Timedelta(days=3650)
+        return frame
+
+    results, failures = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_fake_statement_fetcher,
+        price_fetcher=_disjoint_fx_price_fetcher,
+    )
+
+    assert "Richemont" not in results
+    richemont_failure = next(f for f in failures if f.name == "Richemont")
+    assert "EURCHF=X" in richemont_failure.reason
+    assert "overlap" in richemont_failure.reason.lower()

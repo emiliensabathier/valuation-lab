@@ -8,10 +8,11 @@ precisely the guarantee the fixture exists to provide.
 from __future__ import annotations
 
 import json
+import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
-from vlab.data.loader import load_prices, load_statements
+from vlab.data.loader import Statements, load_prices, load_statements
 from vlab.pipeline import run
 from vlab.universe import MARKET_INDEX, PEERS, needs_conversion, tickers
 
@@ -25,8 +26,10 @@ def main() -> None:
 
     # Freeze the inputs first, so the test can rebuild them without a network.
     info: dict[str, dict] = {}
+    statements_by_ticker: dict[str, Statements] = {}
     for company in PEERS:
         statements = load_statements(company.ticker, cache_dir=CACHE)
+        statements_by_ticker[company.ticker] = statements
         safe = company.ticker.replace(".", "_")
         statements.income.to_csv(statements_dir / f"{safe}_income.csv")
         statements.cashflow.to_csv(statements_dir / f"{safe}_cashflow.csv")
@@ -46,19 +49,52 @@ def main() -> None:
         for company in PEERS
         if needs_conversion(company)
     ]
-    # An outer join on each series' own dates, with no fill: the FX pair is fetched at a
-    # different cadence (1mo/1d) than the equity prices (5y/1wk), and forward-filling it onto
-    # the equity grid silently drops its true latest observation whenever the two grids'
-    # last dates don't coincide. FrozenPriceFetcher recovers each column's native rows by
-    # dropping the ones the other columns padded with NaN, so a request for the FX pair alone
-    # still ends on its own most recent date instead of a stale, equity-grid-aligned one.
+    # Two different windows of the same pair, merged into one column. The 1mo/1d window feeds
+    # load_fx_rate's point-in-time conversion (the freshest close available); the 5y/1wk window
+    # -- the same period and cadence as the equity prices above -- feeds levered_beta's
+    # currency conversion, which needs a rate for every date in the regression, not just the
+    # latest one. combine_first prefers the daily window's more recent closes and falls back to
+    # the weekly window for the rest of the history.
+    #
+    # An outer join onto ``series`` on each series' own dates, with no fill: forward-filling
+    # the combined FX column onto the equity grid would silently drop its true latest
+    # observation whenever the grids' last dates don't coincide. FrozenPriceFetcher recovers
+    # each column's native rows by dropping the ones the other columns padded with NaN, so a
+    # request for the FX pair alone still ends on its own most recent date instead of a stale,
+    # equity-grid-aligned one.
     for pair in pairs:
-        rate = load_prices([pair], cache_dir=CACHE, period="1mo", interval="1d")
-        series = series.join(rate, how="outer")
+        long_history = load_prices([pair], cache_dir=CACHE)[pair]
+        latest = load_prices([pair], cache_dir=CACHE, period="1mo", interval="1d")[pair]
+        combined = latest.combine_first(long_history).rename(pair)
+        series = series.join(combined, how="outer")
     series.to_csv(FIXTURES / "prices.csv")
 
-    # Then the outputs, computed from exactly those inputs.
-    results, failures = run(cache_dir=CACHE)
+    # Then the outputs, computed from exactly those frozen inputs -- not from a second,
+    # independent read of the live cache. Richemont's beta reads the EURCHF pair through two
+    # separate calls at two different cadences (the point-in-time rate and the full history);
+    # replaying against ``series`` itself, the same combined frame just written to
+    # ``prices.csv``, is what guarantees expected_valuations.json matches what
+    # tests/fixtures/frozen.py's FrozenPriceFetcher will hand back later.
+    #
+    # A disposable, empty cache_dir is required here, not CACHE: load_prices and
+    # load_statements check their on-disk cache *before* calling an injected fetcher, so
+    # pointing this run at the real, already-populated cache/ would silently skip both
+    # fetchers below and read the live per-cadence cache files instead -- the exact
+    # inconsistency this replay exists to prevent (see build_frozen_report.py's identical
+    # reasoning for the same pattern).
+    def _frozen_price_fetcher(requested: list[str], _period: str, _interval: str):
+        selected = series.loc[:, [t for t in requested if t in series.columns]]
+        return selected.dropna()
+
+    def _frozen_statement_fetcher(ticker: str) -> Statements:
+        return statements_by_ticker[ticker]
+
+    with tempfile.TemporaryDirectory() as disposable_cache:
+        results, failures = run(
+            cache_dir=Path(disposable_cache),
+            statement_fetcher=_frozen_statement_fetcher,
+            price_fetcher=_frozen_price_fetcher,
+        )
     if failures:
         raise RuntimeError(f"cannot freeze a fixture with unresolved failures: {failures}")
     frozen = {}
