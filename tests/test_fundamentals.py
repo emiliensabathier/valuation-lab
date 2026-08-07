@@ -52,6 +52,45 @@ def test_revenue_is_the_latest_reported_year() -> None:
     assert drivers.revenue == 100.0
 
 
+def test_fiscal_years_records_the_reported_window_oldest_first() -> None:
+    drivers = drivers_from(_statements([100.0, 90.0, 80.0], [20.0, 18.0, 16.0]), "TEST")
+
+    assert drivers.fiscal_years == ("2023-12-31", "2024-12-31", "2025-12-31")
+
+
+def test_fiscal_years_excludes_a_column_with_no_reported_revenue() -> None:
+    # Real statements can carry a column with no revenue reported in it at all (an unusable
+    # oldest year) alongside populated ones -- exactly the shape of the four real companies'
+    # frozen fixtures, which report five columns but only four with revenue. fiscal_years must
+    # reflect the years actually usable for the normalization, not the full width of the frame.
+    periods = pd.DatetimeIndex(["2025-12-31", "2024-12-31", "2023-12-31", "2022-12-31"])
+    income = pd.DataFrame(
+        [[100.0, 90.0, 80.0, float("nan")],
+         [20.0, 18.0, 16.0, 14.0],
+         [18.0, 16.2, 14.4, 12.6],
+         [4.86, 4.374, 3.888, 3.402]],
+        index=["Total Revenue", "EBIT", "Pretax Income", "Tax Provision"],
+        columns=periods,
+    )
+    cashflow = pd.DataFrame(
+        [[-6.0, -5.4, -4.8, -4.2], [10.0, 9.0, 8.0, 7.0], [-1.0, -0.9, -0.8, -0.7]],
+        index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital"],
+        columns=periods,
+    )
+    balance = pd.DataFrame(
+        [[40.0, 45.0, 50.0, 55.0], [15.0, 17.0, 19.0, 21.0], [2.0, 3.0, 4.0, 5.0],
+         [500.0, 510.0, 520.0, 530.0]],
+        index=["Total Debt", "Cash Cash Equivalents And Short Term Investments",
+               "Minority Interest", "Ordinary Shares Number"],
+        columns=periods,
+    )
+    statements = Statements(income, cashflow, balance, {"financialCurrency": "EUR"})
+
+    drivers = drivers_from(statements, "TEST")
+
+    assert drivers.fiscal_years == ("2023-12-31", "2024-12-31", "2025-12-31")
+
+
 def test_growth_uses_the_median_of_the_year_on_year_rates() -> None:
     # Three fiscal years give exactly two growth observations: 100/90 and 90/80.
     drivers = drivers_from(_statements([100.0, 90.0, 80.0], [20.0, 18.0, 16.0]), "TEST")

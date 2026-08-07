@@ -67,6 +67,74 @@ def _summary_table(results) -> str:
     )
 
 
+def _bn(value: float) -> str:
+    """Format a large reporting-currency amount in billions, keeping the sign."""
+    return f"{value / 1e9:.2f}bn"
+
+
+def _year_range(fiscal_years: tuple[str, ...]) -> str:
+    """The reported window as ``2022-2025``, from full period-end dates."""
+    if not fiscal_years:
+        return "n/a"
+    return f"{fiscal_years[0][:4]}–{fiscal_years[-1][:4]}"
+
+
+def _drivers_table(results) -> str:
+    """The normalized inputs behind every valuation, not only its conclusion.
+
+    A reader who cannot see revenue, margin, tax rate, the capex ratio, net debt and the
+    fiscal years they were normalized over has no way to check a single figure in the summary
+    table above -- only to trust it.
+    """
+    rows = []
+    for result in results.values():
+        drivers = result.drivers
+        currency = result.reporting_currency
+        rows.append([
+            result.name,
+            _year_range(drivers.fiscal_years),
+            f"{_bn(drivers.revenue)} {currency}",
+            _pct(drivers.ebit_margin),
+            _pct(drivers.tax_rate),
+            _pct(drivers.capex_ratio),
+            f"{_bn(drivers.net_debt)} {currency}",
+        ])
+    return _table(
+        ["Company", "Fiscal years", "Revenue (latest)", "EBIT margin (normalized)",
+         "Tax rate (normalized)", "Capex / revenue (normalized)", "Net debt (latest)"],
+        rows,
+    )
+
+
+def _kering_collapse_note(results) -> str:
+    """Explain Kering's valuation sitting far below its market price.
+
+    Named specifically rather than phrased as a general warning, because it is a fact about
+    one company's reported history, not a property of the method that would recur for any
+    company shaped differently. The percentages are read off ``results`` here, the same
+    values the summary table renders, so this explanation cannot drift from the figure it is
+    explaining if the underlying data changes.
+    """
+    kering = results.get("Kering")
+    if kering is None:
+        return ""
+    discount = 1.0 - kering.value_per_share / kering.price
+    drivers = kering.drivers
+    return (
+        '<div class="caveat"><strong>Why Kering values so far below its price.</strong> '
+        f"The model's {kering.value_per_share:.2f} {kering.trading_currency} sits about "
+        f"{discount * 100:.0f}% below its {kering.price:.2f} {kering.trading_currency} market "
+        "price. That is a real consequence of the method, not a defect in it: over the "
+        f"reported window ({_year_range(drivers.fiscal_years)}) Kering's EBIT margin fell "
+        "from the mid-20s to single digits and revenue turned sharply negative. Normalizing "
+        f"both as medians over that same window gives an EBIT margin of "
+        f"{_pct(drivers.ebit_margin)} and a revenue growth of {_pct(drivers.revenue_growth)} "
+        "— the model's honest reading of a business still mid-collapse, projected forward "
+        "from its trough rather than from the scale it held before the decline. A median "
+        "normalization is only as representative as the window it is taken over.</div>"
+    )
+
+
 def _grid_table(table, corner: str) -> str:
     """One sensitivity grid. Infeasible cells render as a dash, never as a number."""
     headers = [corner] + [_pct(column) for column in table.columns]
@@ -157,9 +225,18 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
         "<h2>Summary</h2>",
         _summary_table(results),
     ]
+    kering_note = _kering_collapse_note(results)
+    if kering_note:
+        sections.append(kering_note)
     if failures:
         sections.append(_failures_section(failures))
     sections += [
+        "<h2>Drivers</h2>",
+        '<p class="note">What each valuation is actually built from. Revenue and net debt '
+        "are the latest reported fiscal year; EBIT margin, tax rate and the capex ratio are "
+        "medians across the fiscal years listed. Revenue growth is normalized the same way "
+        "and shown in the Summary table above, not repeated here.</p>",
+        _drivers_table(results),
         "<h2>Implied against delivered growth</h2>",
         implied_growth_chart(implied, normalized),
         "<h2>Price against model</h2>",

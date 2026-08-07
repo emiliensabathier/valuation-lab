@@ -16,7 +16,7 @@ from vlab.data.loader import (
 )
 from vlab.dcf import assumptions_from, terminal_exit_multiple, value
 from vlab.errors import DataError, ValuationError
-from vlab.fundamentals import drivers_from
+from vlab.fundamentals import Drivers, drivers_from
 from vlab.report.build import build_report
 from vlab.reverse import implied_revenue_growth
 from vlab.sensitivity import default_margin_growth_grid, default_wacc_terminal_grid
@@ -28,10 +28,17 @@ TERMINAL_GROWTH = 0.02
 
 @dataclass(frozen=True)
 class CompanyResult:
-    """Everything the report needs about one company."""
+    """Everything the report needs about one company.
+
+    ``drivers`` is the normalized ``Drivers`` this valuation was built from, in
+    ``reporting_currency`` -- carried through so the report can show a reader what the model
+    is actually pricing (revenue, margin, tax rate, capex ratio, net debt, fiscal years), not
+    only what it concludes.
+    """
 
     name: str
     ticker: str
+    reporting_currency: str
     trading_currency: str
     price: float
     value_per_share: float
@@ -43,6 +50,7 @@ class CompanyResult:
     exit_multiple: float
     sensitivity: pd.DataFrame
     margin_sensitivity: pd.DataFrame
+    drivers: Drivers
 
 
 @dataclass(frozen=True)
@@ -171,6 +179,7 @@ def _value_company(
     return CompanyResult(
         name=company.name,
         ticker=company.ticker,
+        reporting_currency=company.reporting_currency,
         trading_currency=company.trading_currency,
         price=price,
         value_per_share=value_per_share,
@@ -182,6 +191,7 @@ def _value_company(
         exit_multiple=terminal_exit_multiple(drivers, assumptions),
         sensitivity=sensitivity,
         margin_sensitivity=margin_sensitivity,
+        drivers=drivers,
     )
 
 

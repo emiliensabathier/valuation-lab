@@ -1,11 +1,12 @@
 """Tests for the self-contained HTML report."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from vlab.fundamentals import Drivers
 from vlab.report.build import build_report
 from vlab.report.charts import figure_to_svg, implied_growth_chart
 
@@ -14,6 +15,7 @@ from vlab.report.charts import figure_to_svg, implied_growth_chart
 class _Result:
     name: str
     ticker: str
+    reporting_currency: str
     trading_currency: str
     price: float
     value_per_share: float
@@ -25,16 +27,27 @@ class _Result:
     exit_multiple: float
     sensitivity: pd.DataFrame
     margin_sensitivity: pd.DataFrame
+    drivers: Drivers
+
+
+def _drivers(revenue_growth: float, ebit_margin: float, net_debt: float) -> Drivers:
+    return Drivers(
+        revenue=1_000_000_000.0, revenue_growth=revenue_growth, ebit_margin=ebit_margin,
+        tax_rate=0.27, capex_ratio=-0.05, da_ratio=0.06, nwc_ratio=-0.01,
+        net_debt=net_debt, minority_interest=0.0, shares=10_000_000.0,
+        fiscal_years=("2022-12-31", "2023-12-31", "2024-12-31", "2025-12-31"),
+    )
 
 
 def _results() -> dict[str, _Result]:
     table = pd.DataFrame([[100.0, 110.0], [90.0, 95.0]], index=[0.08, 0.09], columns=[0.01, 0.02])
     margins = pd.DataFrame([[80.0, 95.0], [110.0, 130.0]], index=[0.18, 0.22], columns=[0.03, 0.07])
     return {
-        "LVMH": _Result("LVMH", "MC.PA", "EUR", 481.45, 520.0, 0.041, 0.062, 0.083, 0.84,
-                        0.71, 14.2, table, margins),
-        "Hermes": _Result("Hermes", "RMS.PA", "EUR", 2100.0, 1600.0, 0.112, 0.089, 0.079,
-                          0.71, 0.78, 26.9, table, margins),
+        "LVMH": _Result("LVMH", "MC.PA", "EUR", "EUR", 481.45, 520.0, 0.041, 0.062, 0.083, 0.84,
+                        0.71, 14.2, table, margins, _drivers(0.062, 0.24, 5_000_000_000.0)),
+        "Hermes": _Result("Hermes", "RMS.PA", "EUR", "EUR", 2100.0, 1600.0, 0.112, 0.089, 0.079,
+                          0.71, 0.78, 26.9, table, margins,
+                          _drivers(0.089, 0.40, -1_000_000_000.0)),
     }
 
 
@@ -119,6 +132,58 @@ def test_the_report_names_the_stated_assumptions() -> None:
     assert "5.00%" in html
 
 
+def test_the_drivers_table_shows_what_each_valuation_is_built_from() -> None:
+    # A reader cannot verify a single figure in the Summary table without seeing the inputs
+    # that produced it: revenue, margin, tax rate, capex ratio, net debt and the fiscal years
+    # they were normalized over.
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "<h2>Drivers</h2>" in html
+    assert "2022–2025" in html  # the fiscal-year window from _drivers()
+    assert "1.00bn EUR" in html  # revenue, from _drivers()
+    assert "24.00%" in html  # LVMH's EBIT margin
+    assert "27.00%" in html  # the shared tax rate
+    assert "-5.00%" in html  # the shared capex ratio
+    assert "5.00bn EUR" in html  # LVMH's net debt
+    assert "-1.00bn EUR" in html  # Hermes's net debt (net cash, sign preserved)
+
+
+def test_a_company_with_no_fiscal_years_recorded_shows_not_available() -> None:
+    # Drivers.fiscal_years defaults to an empty tuple for every hand-built fixture across the
+    # test suite that predates the field. The report must not crash or print an empty range
+    # for one of them; it must say plainly that the window is unknown.
+    results = _results()
+    bare = replace(results["LVMH"].drivers, fiscal_years=())
+    results["LVMH"] = replace(results["LVMH"], drivers=bare)
+
+    html = build_report(results, generated_on="2026-08-06")
+
+    lvmh_start = html.index("<h2>Drivers</h2>")
+    assert "n/a" in html[lvmh_start:]
+
+
+def test_kerings_valuation_gap_is_explained_when_kering_is_present() -> None:
+    results = _results()
+    kering_drivers = _drivers(-0.13, 0.18, 2_000_000_000.0)
+    results["Kering"] = _Result(
+        "Kering", "KER.PA", "EUR", "EUR", 289.75, 36.54, 0.0798, -0.13, 0.0731, 1.36,
+        0.71, 14.5, results["LVMH"].sensitivity, results["LVMH"].margin_sensitivity,
+        kering_drivers,
+    )
+
+    html = build_report(results, generated_on="2026-08-06")
+
+    assert "Why Kering values so far below its price" in html
+    # 1 - 36.54 / 289.75 = 0.8739..., rounded to the nearest percent.
+    assert "87%" in html
+
+
+def test_no_kering_note_when_kering_is_not_in_the_results() -> None:
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "Why Kering" not in html
+
+
 def test_the_sensitivity_grid_corner_is_labeled_with_its_currency() -> None:
     # No grid carried a currency label at all, which is how a EUR grid sitting under a CHF
     # summary row went unnoticed. Both companies here trade in EUR, so the label must say so.
@@ -184,11 +249,12 @@ def test_a_nan_cell_in_the_sensitivity_grid_is_shown_as_a_dash_not_a_number() ->
         [[120.0, 130.0], [np.nan, 140.0]], index=[0.08, 0.02], columns=[0.01, 0.02]
     )
     results["LVMH"] = _Result(
-        results["LVMH"].name, results["LVMH"].ticker, results["LVMH"].trading_currency,
+        results["LVMH"].name, results["LVMH"].ticker, results["LVMH"].reporting_currency,
+        results["LVMH"].trading_currency,
         results["LVMH"].price, results["LVMH"].value_per_share, results["LVMH"].implied_growth,
         results["LVMH"].normalized_growth, results["LVMH"].wacc, results["LVMH"].beta,
         results["LVMH"].terminal_share, results["LVMH"].exit_multiple, nan_table,
-        results["LVMH"].margin_sensitivity,
+        results["LVMH"].margin_sensitivity, results["LVMH"].drivers,
     )
 
     html = build_report(results, generated_on="2026-08-06")

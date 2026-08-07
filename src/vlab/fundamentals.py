@@ -25,6 +25,12 @@ class Drivers:
     ``capex_ratio`` and ``nwc_ratio`` are negative when they consume cash, exactly as
     reported. The free cash flow formula is additive as a result, so there is no sign to flip
     and no opportunity to flip it wrongly.
+
+    ``fiscal_years`` records the reported period-end dates actually used for revenue, oldest
+    first (e.g. ``("2022-12-31", ..., "2025-12-31")``), so the report can show a reader what
+    period each driver was normalized over. It defaults to empty so the many hand-built
+    ``Drivers(...)`` fixtures across the test suite, which predate this field, stay valid;
+    only ``drivers_from`` populates it from real statements.
     """
 
     revenue: float
@@ -37,6 +43,7 @@ class Drivers:
     net_debt: float
     minority_interest: float
     shares: float
+    fiscal_years: tuple[str, ...] = ()
 
 
 def _median_ratio(numerator: pd.Series, denominator: pd.Series) -> float:
@@ -75,6 +82,11 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
             "does not value a structurally loss-making business"
         )
 
+    # The reported years actually behind the normalization, oldest first -- one company's
+    # statements can carry a column with no revenue in it (a fifth, unreported year), so this
+    # is the real usable window, not the full width of the source frame.
+    fiscal_years = tuple(sorted(str(period.date()) for period in revenue.dropna().index))
+
     return Drivers(
         revenue=float(revenue.iloc[0]),
         revenue_growth=float(np.median(growth.to_numpy())),
@@ -86,4 +98,5 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
         net_debt=float(debt.iloc[0] - cash.iloc[0]),
         minority_interest=float(minorities.iloc[0]),
         shares=float(shares.iloc[0]),
+        fiscal_years=fiscal_years,
     )
