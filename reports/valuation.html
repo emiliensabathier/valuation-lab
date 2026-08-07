@@ -22,16 +22,19 @@ svg { max-width: 100%; height: auto; }
 <body>
 <h1>What the market is paying for growth</h1>
 <p class="note">Four European luxury houses, valued on unlevered free cash flow and then inverted against their own share prices. Generated on 2026-08-06.</p>
-<div class="caveat"><strong>What this does not say.</strong> A reverse discounted cash flow does not say a share is expensive. It says what the market assumes. Judging whether 11% growth for five years is plausible for a luxury house remains an analyst's work, not a model's.</div>
+<div class="caveat"><strong>What this does not say.</strong> A reverse discounted cash flow does not say a share is expensive. It says what the market assumes. Judging whether the implied growth is plausible for a given house is an analyst's work, not a model's.</div>
 <h2>Summary</h2>
-<table><thead><tr><th>Company</th><th>Price</th><th>Modelled value</th><th>Implied growth</th><th>Normalized growth</th><th>WACC</th><th>Beta</th><th>Terminal share</th><th>Implied exit</th></tr></thead><tbody><tr><td>LVMH</td><td>481.45 EUR</td><td>313.51 EUR</td><td>7.08%</td><td>-1.71%</td><td>8.55%</td><td>1.30</td><td>71.66%</td><td>10.8x</td></tr><tr><td>Hermes</td><td>1626.00 EUR</td><td>1063.80 EUR</td><td>24.85%</td><td>12.98%</td><td>9.13%</td><td>1.25</td><td>75.40%</td><td>9.4x</td></tr><tr><td>Kering</td><td>289.75 EUR</td><td>36.54 EUR</td><td>7.98%</td><td>-13.03%</td><td>7.31%</td><td>1.36</td><td>70.71%</td><td>14.5x</td></tr><tr><td>Richemont</td><td>196.15 CHF</td><td>105.17 CHF</td><td>19.97%</td><td>3.80%</td><td>9.42%</td><td>1.48</td><td>71.15%</td><td>10.8x</td></tr></tbody></table>
+<table><thead><tr><th>Company</th><th>Price</th><th>Modelled value</th><th>Implied growth</th><th>Normalized growth</th><th>WACC</th><th>Beta</th><th>Terminal share</th><th>Implied exit</th></tr></thead><tbody><tr><td>LVMH</td><td>481.45 EUR</td><td>313.21 EUR</td><td>7.10%</td><td>-1.71%</td><td>8.56%</td><td>1.30</td><td>71.64%</td><td>10.8x</td></tr><tr><td>Hermes</td><td>1626.00 EUR</td><td>1063.78 EUR</td><td>24.85%</td><td>12.98%</td><td>9.13%</td><td>1.25</td><td>75.40%</td><td>9.4x</td></tr><tr><td>Kering</td><td>289.75 EUR</td><td>36.54 EUR</td><td>7.98%</td><td>-13.03%</td><td>7.31%</td><td>1.36</td><td>70.71%</td><td>14.5x</td></tr><tr><td>Richemont</td><td>196.15 CHF</td><td>103.40 CHF</td><td>20.48%</td><td>3.80%</td><td>9.56%</td><td>1.48</td><td>70.73%</td><td>10.6x</td></tr></tbody></table>
+<div class="caveat"><strong>Why Kering values so far below its price.</strong> The model's 36.54 EUR sits about 87% below its 289.75 EUR market price. That is a real consequence of the method, not a defect in it: over the reported window (2022–2025) Kering's EBIT margin fell from the mid-20s to single digits and revenue turned sharply negative. Normalizing both as medians over that same window gives an EBIT margin of 18.22% and a revenue growth of -13.03% — the model's honest reading of a business still mid-collapse, projected forward from its trough rather than from the scale it held before the decline. A median normalization is only as representative as the window it is taken over.</div>
+<h2>Drivers</h2>
+<p class="note">What each valuation is actually built from. Revenue and net debt are the latest reported fiscal year; EBIT margin, tax rate and the capex ratio are medians across the fiscal years listed. Revenue growth is normalized the same way and shown in the Summary table above, not repeated here.</p>
+<table><thead><tr><th>Company</th><th>Fiscal years</th><th>Revenue (latest)</th><th>EBIT margin (normalized)</th><th>Tax rate (normalized)</th><th>Capex / revenue (normalized)</th><th>Net debt (latest)</th></tr></thead><tbody><tr><td>LVMH</td><td>2022–2025</td><td>80.81bn EUR</td><td>24.34%</td><td>27.57%</td><td>-6.49%</td><td>23.23bn EUR</td></tr><tr><td>Hermes</td><td>2022–2025</td><td>16.00bn EUR</td><td>42.74%</td><td>28.42%</td><td>-6.72%</td><td>-9.89bn EUR</td></tr><tr><td>Kering</td><td>2022–2025</td><td>14.68bn EUR</td><td>18.22%</td><td>28.19%</td><td>-9.50%</td><td>13.84bn EUR</td></tr><tr><td>Richemont</td><td>2023–2026</td><td>22.42bn EUR</td><td>23.96%</td><td>17.89%</td><td>-4.94%</td><td>-3.72bn EUR</td></tr></tbody></table>
 <h2>Implied against delivered growth</h2>
 <svg xmlns:xlink="http://www.w3.org/1999/xlink" width="568.246094pt" height="268.278906pt" viewBox="0 0 568.246094 268.278906" xmlns="http://www.w3.org/2000/svg" version="1.1">
  <metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-08-06T22:30:11.191421</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -63,79 +66,79 @@ z
 " style="fill: #ffffff"/>
    </g>
    <g id="patch_3">
-    <path d="M 81.673366 164.640331 
-L 127.813599 164.640331 
-L 127.813599 126.97327 
-L 81.673366 126.97327 
+    <path d="M 81.673366 164.641033 
+L 127.813599 164.641033 
+L 127.813599 126.863818 
+L 81.673366 126.863818 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #1f77b4"/>
+" clip-path="url(#p06c356cefd)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_4">
-    <path d="M 203.09503 164.640331 
-L 249.235262 164.640331 
+    <path d="M 203.09503 164.641033 
+L 249.235262 164.641033 
 L 249.235262 32.398125 
 L 203.09503 32.398125 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #1f77b4"/>
+" clip-path="url(#p06c356cefd)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_5">
-    <path d="M 324.516693 164.640331 
-L 370.656925 164.640331 
-L 370.656925 122.15411 
-L 324.516693 122.15411 
+    <path d="M 324.516693 164.641033 
+L 370.656925 164.641033 
+L 370.656925 122.154921 
+L 324.516693 122.154921 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #1f77b4"/>
+" clip-path="url(#p06c356cefd)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_6">
-    <path d="M 445.938357 164.640331 
-L 492.078589 164.640331 
-L 492.078589 58.343113 
-L 445.938357 58.343113 
+    <path d="M 445.938357 164.641033 
+L 492.078589 164.641033 
+L 492.078589 55.655178 
+L 445.938357 55.655178 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #1f77b4"/>
+" clip-path="url(#p06c356cefd)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_7">
-    <path d="M 127.813599 164.640331 
-L 173.953831 164.640331 
-L 173.953831 173.727536 
-L 127.813599 173.727536 
+    <path d="M 127.813599 164.641033 
+L 173.953831 164.641033 
+L 173.953831 173.728147 
+L 127.813599 173.728147 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #ff7f0e"/>
+" clip-path="url(#p06c356cefd)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_8">
-    <path d="M 249.235262 164.640331 
-L 295.375494 164.640331 
-L 295.375494 95.551716 
-L 249.235262 95.551716 
+    <path d="M 249.235262 164.641033 
+L 295.375494 164.641033 
+L 295.375494 95.553118 
+L 249.235262 95.553118 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #ff7f0e"/>
+" clip-path="url(#p06c356cefd)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_9">
-    <path d="M 370.656925 164.640331 
-L 416.797158 164.640331 
+    <path d="M 370.656925 164.641033 
+L 416.797158 164.641033 
 L 416.797158 233.998125 
 L 370.656925 233.998125 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #ff7f0e"/>
+" clip-path="url(#p06c356cefd)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_10">
-    <path d="M 492.078589 164.640331 
-L 538.218821 164.640331 
-L 538.218821 144.426648 
-L 492.078589 144.426648 
+    <path d="M 492.078589 164.641033 
+L 538.218821 164.641033 
+L 538.218821 144.427556 
+L 492.078589 144.427556 
 z
-" clip-path="url(#p342e8fcb3d)" style="fill: #ff7f0e"/>
+" clip-path="url(#p06c356cefd)" style="fill: #ff7f0e"/>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
      <g id="line2d_1">
       <defs>
-       <path id="mc99095a87b" d="M 0 0 
+       <path id="m507a4c55cb" d="M 0 0 
 L 0 3.5 
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#mc99095a87b" x="127.813599" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="127.813599" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_1">
@@ -203,7 +206,7 @@ z
     <g id="xtick_2">
      <g id="line2d_2">
       <g>
-       <use xlink:href="#mc99095a87b" x="249.235262" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="249.235262" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_2">
@@ -326,7 +329,7 @@ z
     <g id="xtick_3">
      <g id="line2d_3">
       <g>
-       <use xlink:href="#mc99095a87b" x="370.656925" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="370.656925" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_3">
@@ -426,7 +429,7 @@ z
     <g id="xtick_4">
      <g id="line2d_4">
       <g>
-       <use xlink:href="#mc99095a87b" x="492.078589" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="492.078589" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_4">
@@ -560,23 +563,23 @@ z
    <g id="matplotlib.axis_2">
     <g id="ytick_1">
      <g id="line2d_5">
-      <path d="M 58.846094 217.861951 
-L 561.046094 217.861951 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 217.862114 
+L 561.046094 217.862114 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_6">
       <defs>
-       <path id="m7fa0ae7282" d="M 0 0 
+       <path id="m19a50a0fa3" d="M 0 0 
 L -3.5 0 
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="217.861951" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="217.862114" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_5">
       <!-- −0.10 -->
-      <g transform="translate(21.200781 221.660779) scale(0.1 -0.1)">
+      <g transform="translate(21.200781 221.660942) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-c9c" d="M 678 2272 
 L 4684 2272 
@@ -638,18 +641,18 @@ z
     </g>
     <g id="ytick_2">
      <g id="line2d_7">
-      <path d="M 58.846094 191.251141 
-L 561.046094 191.251141 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 191.251574 
+L 561.046094 191.251574 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_8">
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="191.251141" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="191.251574" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_6">
       <!-- −0.05 -->
-      <g transform="translate(21.200781 195.049969) scale(0.1 -0.1)">
+      <g transform="translate(21.200781 195.050402) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-18" d="M 691 4666 
 L 3169 4666 
@@ -687,18 +690,18 @@ z
     </g>
     <g id="ytick_3">
      <g id="line2d_9">
-      <path d="M 58.846094 164.640331 
-L 561.046094 164.640331 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 164.641033 
+L 561.046094 164.641033 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_10">
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="164.640331" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="164.641033" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_7">
       <!-- 0.00 -->
-      <g transform="translate(29.580469 168.439159) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 168.439862) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-13"/>
        <use xlink:href="#DejaVuSans-11" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-13" transform="translate(95.40625 0)"/>
@@ -708,18 +711,18 @@ L 561.046094 164.640331
     </g>
     <g id="ytick_4">
      <g id="line2d_11">
-      <path d="M 58.846094 138.029521 
-L 561.046094 138.029521 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 138.030493 
+L 561.046094 138.030493 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_12">
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="138.029521" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="138.030493" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_8">
       <!-- 0.05 -->
-      <g transform="translate(29.580469 141.828349) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 141.829321) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-13"/>
        <use xlink:href="#DejaVuSans-11" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-13" transform="translate(95.40625 0)"/>
@@ -729,18 +732,18 @@ L 561.046094 138.029521
     </g>
     <g id="ytick_5">
      <g id="line2d_13">
-      <path d="M 58.846094 111.418711 
-L 561.046094 111.418711 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 111.419953 
+L 561.046094 111.419953 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_14">
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="111.418711" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="111.419953" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_9">
       <!-- 0.10 -->
-      <g transform="translate(29.580469 115.217539) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 115.218781) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-13"/>
        <use xlink:href="#DejaVuSans-11" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-14" transform="translate(95.40625 0)"/>
@@ -750,18 +753,18 @@ L 561.046094 111.418711
     </g>
     <g id="ytick_6">
      <g id="line2d_15">
-      <path d="M 58.846094 84.807901 
-L 561.046094 84.807901 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 84.809413 
+L 561.046094 84.809413 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_16">
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="84.807901" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="84.809413" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_10">
       <!-- 0.15 -->
-      <g transform="translate(29.580469 88.606729) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 88.608241) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-13"/>
        <use xlink:href="#DejaVuSans-11" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-14" transform="translate(95.40625 0)"/>
@@ -771,18 +774,18 @@ L 561.046094 84.807901
     </g>
     <g id="ytick_7">
      <g id="line2d_17">
-      <path d="M 58.846094 58.197091 
-L 561.046094 58.197091 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 58.198872 
+L 561.046094 58.198872 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_18">
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="58.197091" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="58.198872" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_11">
       <!-- 0.20 -->
-      <g transform="translate(29.580469 61.995919) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 61.9977) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-15" d="M 1228 531 
 L 3431 531 
@@ -818,18 +821,18 @@ z
     </g>
     <g id="ytick_8">
      <g id="line2d_19">
-      <path d="M 58.846094 31.586281 
-L 561.046094 31.586281 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+      <path d="M 58.846094 31.588332 
+L 561.046094 31.588332 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_20">
       <g>
-       <use xlink:href="#m7fa0ae7282" x="58.846094" y="31.586281" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.846094" y="31.588332" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_12">
       <!-- 0.25 -->
-      <g transform="translate(29.580469 35.385109) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 35.38716) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-13"/>
        <use xlink:href="#DejaVuSans-11" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-15" transform="translate(95.40625 0)"/>
@@ -972,9 +975,9 @@ z
     </g>
    </g>
    <g id="line2d_21">
-    <path d="M 58.846094 164.640331 
-L 561.046094 164.640331 
-" clip-path="url(#p342e8fcb3d)" style="fill: none; stroke: #444444; stroke-width: 0.8; stroke-linecap: square"/>
+    <path d="M 58.846094 164.641033 
+L 561.046094 164.641033 
+" clip-path="url(#p06c356cefd)" style="fill: none; stroke: #444444; stroke-width: 0.8; stroke-linecap: square"/>
    </g>
    <g id="patch_11">
     <path d="M 58.846094 244.078125 
@@ -1326,7 +1329,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p342e8fcb3d">
+  <clipPath id="p06c356cefd">
    <rect x="58.846094" y="22.318125" width="502.2" height="221.76"/>
   </clipPath>
  </defs>
@@ -1338,7 +1341,6 @@ z
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-08-06T22:30:13.563525</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -1375,7 +1377,7 @@ L 122.618286 244.078125
 L 122.618286 181.54292 
 L 76.478054 181.54292 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #1f77b4"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_4">
     <path d="M 197.899717 244.078125 
@@ -1383,7 +1385,7 @@ L 244.03995 244.078125
 L 244.03995 32.878125 
 L 197.899717 32.878125 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #1f77b4"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_5">
     <path d="M 319.321381 244.078125 
@@ -1391,7 +1393,7 @@ L 365.461613 244.078125
 L 365.461613 206.442701 
 L 319.321381 206.442701 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #1f77b4"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_6">
     <path d="M 440.743044 244.078125 
@@ -1399,50 +1401,50 @@ L 486.883276 244.078125
 L 486.883276 218.60034 
 L 440.743044 218.60034 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #1f77b4"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_7">
     <path d="M 122.618286 244.078125 
 L 168.758518 244.078125 
-L 168.758518 203.356557 
-L 122.618286 203.356557 
+L 168.758518 203.395984 
+L 122.618286 203.395984 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #ff7f0e"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_8">
     <path d="M 244.03995 244.078125 
 L 290.180182 244.078125 
-L 290.180182 105.902475 
-L 244.03995 105.902475 
+L 290.180182 105.904203 
+L 244.03995 105.904203 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #ff7f0e"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_9">
     <path d="M 365.461613 244.078125 
 L 411.601845 244.078125 
-L 411.601845 239.331407 
-L 365.461613 239.331407 
+L 411.601845 239.331454 
+L 365.461613 239.331454 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #ff7f0e"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_10">
     <path d="M 486.883276 244.078125 
 L 533.023509 244.078125 
-L 533.023509 230.417354 
-L 486.883276 230.417354 
+L 533.023509 230.647981 
+L 486.883276 230.647981 
 z
-" clip-path="url(#p0af7d30671)" style="fill: #ff7f0e"/>
+" clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
      <g id="line2d_1">
       <defs>
-       <path id="md44ee52275" d="M 0 0 
+       <path id="m507a4c55cb" d="M 0 0 
 L 0 3.5 
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#md44ee52275" x="122.618286" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="122.618286" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_1">
@@ -1510,7 +1512,7 @@ z
     <g id="xtick_2">
      <g id="line2d_2">
       <g>
-       <use xlink:href="#md44ee52275" x="244.03995" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="244.03995" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_2">
@@ -1633,7 +1635,7 @@ z
     <g id="xtick_3">
      <g id="line2d_3">
       <g>
-       <use xlink:href="#md44ee52275" x="365.461613" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="365.461613" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_3">
@@ -1733,7 +1735,7 @@ z
     <g id="xtick_4">
      <g id="line2d_4">
       <g>
-       <use xlink:href="#md44ee52275" x="486.883276" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m507a4c55cb" x="486.883276" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_4">
@@ -1869,16 +1871,16 @@ z
      <g id="line2d_5">
       <path d="M 53.650781 244.078125 
 L 555.850781 244.078125 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_6">
       <defs>
-       <path id="me84e5a8411" d="M 0 0 
+       <path id="m19a50a0fa3" d="M 0 0 
 L -3.5 0 
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="244.078125" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_5">
@@ -1915,11 +1917,11 @@ z
      <g id="line2d_7">
       <path d="M 53.650781 218.100265 
 L 555.850781 218.100265 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_8">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="218.100265" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="218.100265" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_6">
@@ -1961,11 +1963,11 @@ z
      <g id="line2d_9">
       <path d="M 53.650781 192.122405 
 L 555.850781 192.122405 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_10">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="192.122405" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="192.122405" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_7">
@@ -2002,11 +2004,11 @@ z
      <g id="line2d_11">
       <path d="M 53.650781 166.144546 
 L 555.850781 166.144546 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_12">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="166.144546" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="166.144546" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_8">
@@ -2054,11 +2056,11 @@ z
      <g id="line2d_13">
       <path d="M 53.650781 140.166686 
 L 555.850781 140.166686 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_14">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="140.166686" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="140.166686" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_9">
@@ -2115,11 +2117,11 @@ z
      <g id="line2d_15">
       <path d="M 53.650781 114.188826 
 L 555.850781 114.188826 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_16">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="114.188826" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="114.188826" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_10">
@@ -2152,11 +2154,11 @@ z
      <g id="line2d_17">
       <path d="M 53.650781 88.210966 
 L 555.850781 88.210966 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_18">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="88.210966" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="88.210966" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_11">
@@ -2173,11 +2175,11 @@ L 555.850781 88.210966
      <g id="line2d_19">
       <path d="M 53.650781 62.233107 
 L 555.850781 62.233107 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_20">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="62.233107" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="62.233107" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_12">
@@ -2194,11 +2196,11 @@ L 555.850781 62.233107
      <g id="line2d_21">
       <path d="M 53.650781 36.255247 
 L 555.850781 36.255247 
-" clip-path="url(#p0af7d30671)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
+" clip-path="url(#pe4135a5ded)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_22">
       <g>
-       <use xlink:href="#me84e5a8411" x="53.650781" y="36.255247" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="53.650781" y="36.255247" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_13">
@@ -2593,7 +2595,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p0af7d30671">
+  <clipPath id="pe4135a5ded">
    <rect x="53.650781" y="22.318125" width="502.2" height="221.76"/>
   </clipPath>
  </defs>
@@ -2601,7 +2603,7 @@ z
 
 <h2>Sensitivity</h2>
 <p class="note">Value per share across two pairs of assumptions. The first grid moves the model — the discount rate and the perpetual growth rate. The second moves the business — the operating margin and revenue growth. A valuation fragile to the first is an argument about the cost of capital; one fragile to the second is an argument about the company. A dash marks a combination with no meaning, where the discount rate sits at or below the growth rate; it is left blank rather than filled with a number that would look like an answer.</p>
-<h3>LVMH</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>6.55%</td><td>393</td><td>427</td><td>470</td><td>523</td><td>591</td></tr><tr><td>7.55%</td><td>326</td><td>350</td><td>378</td><td>411</td><td>452</td></tr><tr><td>8.55%</td><td>277</td><td>294</td><td>313</td><td>336</td><td>363</td></tr><tr><td>9.55%</td><td>239</td><td>252</td><td>266</td><td>283</td><td>302</td></tr><tr><td>10.55%</td><td>209</td><td>219</td><td>230</td><td>242</td><td>256</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth</th><th>-5.71%</th><th>-3.71%</th><th>-1.71%</th><th>0.29%</th><th>2.29%</th></tr></thead><tbody><tr><td>20.34%</td><td>201</td><td>225</td><td>251</td><td>279</td><td>309</td></tr><tr><td>22.34%</td><td>227</td><td>254</td><td>282</td><td>313</td><td>346</td></tr><tr><td>24.34%</td><td>254</td><td>282</td><td>314</td><td>347</td><td>383</td></tr><tr><td>26.34%</td><td>280</td><td>311</td><td>345</td><td>381</td><td>421</td></tr><tr><td>28.34%</td><td>306</td><td>339</td><td>376</td><td>415</td><td>458</td></tr></tbody></table><h3>Hermes</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.13%</td><td>1270</td><td>1357</td><td>1460</td><td>1587</td><td>1744</td></tr><tr><td>8.13%</td><td>1097</td><td>1158</td><td>1229</td><td>1313</td><td>1413</td></tr><tr><td>9.13%</td><td>967</td><td>1012</td><td>1063</td><td>1122</td><td>1191</td></tr><tr><td>10.13%</td><td>866</td><td>900</td><td>938</td><td>982</td><td>1031</td></tr><tr><td>11.13%</td><td>785</td><td>811</td><td>841</td><td>874</td><td>911</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth</th><th>8.98%</th><th>10.98%</th><th>12.98%</th><th>14.98%</th><th>16.98%</th></tr></thead><tbody><tr><td>38.74%</td><td>835</td><td>898</td><td>965</td><td>1037</td><td>1114</td></tr><tr><td>40.74%</td><td>877</td><td>943</td><td>1014</td><td>1091</td><td>1172</td></tr><tr><td>42.74%</td><td>919</td><td>989</td><td>1064</td><td>1144</td><td>1230</td></tr><tr><td>44.74%</td><td>961</td><td>1034</td><td>1113</td><td>1198</td><td>1288</td></tr><tr><td>46.74%</td><td>1002</td><td>1080</td><td>1163</td><td>1251</td><td>1346</td></tr></tbody></table><h3>Kering</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>5.31%</td><td>76</td><td>97</td><td>123</td><td>159</td><td>210</td></tr><tr><td>6.31%</td><td>42</td><td>54</td><td>70</td><td>89</td><td>115</td></tr><tr><td>7.31%</td><td>18</td><td>27</td><td>37</td><td>49</td><td>64</td></tr><tr><td>8.31%</td><td>1</td><td>7</td><td>14</td><td>22</td><td>32</td></tr><tr><td>9.31%</td><td>-12</td><td>-8</td><td>-3</td><td>3</td><td>10</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth</th><th>-17.03%</th><th>-15.03%</th><th>-13.03%</th><th>-11.03%</th><th>-9.03%</th></tr></thead><tbody><tr><td>14.22%</td><td>-18</td><td>-8</td><td>4</td><td>17</td><td>30</td></tr><tr><td>16.22%</td><td>-5</td><td>7</td><td>20</td><td>35</td><td>50</td></tr><tr><td>18.22%</td><td>8</td><td>22</td><td>37</td><td>53</td><td>70</td></tr><tr><td>20.22%</td><td>22</td><td>37</td><td>53</td><td>71</td><td>90</td></tr><tr><td>22.22%</td><td>35</td><td>51</td><td>69</td><td>89</td><td>110</td></tr></tbody></table><h3>Richemont</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.42%</td><td>133</td><td>142</td><td>152</td><td>164</td><td>179</td></tr><tr><td>8.42%</td><td>116</td><td>122</td><td>129</td><td>137</td><td>147</td></tr><tr><td>9.42%</td><td>103</td><td>107</td><td>112</td><td>118</td><td>125</td></tr><tr><td>10.42%</td><td>92</td><td>96</td><td>100</td><td>104</td><td>109</td></tr><tr><td>11.42%</td><td>84</td><td>87</td><td>90</td><td>93</td><td>97</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth</th><th>-0.20%</th><th>1.80%</th><th>3.80%</th><th>5.80%</th><th>7.80%</th></tr></thead><tbody><tr><td>19.96%</td><td>80</td><td>87</td><td>94</td><td>101</td><td>110</td></tr><tr><td>21.96%</td><td>88</td><td>95</td><td>103</td><td>112</td><td>121</td></tr><tr><td>23.96%</td><td>96</td><td>104</td><td>112</td><td>122</td><td>132</td></tr><tr><td>25.96%</td><td>103</td><td>112</td><td>122</td><td>132</td><td>143</td></tr><tr><td>27.96%</td><td>111</td><td>121</td><td>131</td><td>142</td><td>154</td></tr></tbody></table>
+<h3>LVMH</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>6.56%</td><td>392</td><td>426</td><td>469</td><td>522</td><td>589</td></tr><tr><td>7.56%</td><td>325</td><td>349</td><td>377</td><td>410</td><td>451</td></tr><tr><td>8.56%</td><td>276</td><td>293</td><td>313</td><td>336</td><td>363</td></tr><tr><td>9.56%</td><td>239</td><td>252</td><td>266</td><td>282</td><td>301</td></tr><tr><td>10.56%</td><td>209</td><td>219</td><td>230</td><td>242</td><td>256</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>-5.71%</th><th>-3.71%</th><th>-1.71%</th><th>0.29%</th><th>2.29%</th></tr></thead><tbody><tr><td>20.34%</td><td>201</td><td>225</td><td>251</td><td>279</td><td>309</td></tr><tr><td>22.34%</td><td>227</td><td>254</td><td>282</td><td>313</td><td>346</td></tr><tr><td>24.34%</td><td>253</td><td>282</td><td>313</td><td>347</td><td>383</td></tr><tr><td>26.34%</td><td>279</td><td>311</td><td>344</td><td>381</td><td>420</td></tr><tr><td>28.34%</td><td>305</td><td>339</td><td>376</td><td>415</td><td>457</td></tr></tbody></table><h3>Hermes</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.13%</td><td>1270</td><td>1357</td><td>1460</td><td>1587</td><td>1744</td></tr><tr><td>8.13%</td><td>1097</td><td>1158</td><td>1229</td><td>1313</td><td>1413</td></tr><tr><td>9.13%</td><td>967</td><td>1012</td><td>1063</td><td>1122</td><td>1191</td></tr><tr><td>10.13%</td><td>866</td><td>900</td><td>938</td><td>982</td><td>1031</td></tr><tr><td>11.13%</td><td>785</td><td>811</td><td>841</td><td>874</td><td>911</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>8.98%</th><th>10.98%</th><th>12.98%</th><th>14.98%</th><th>16.98%</th></tr></thead><tbody><tr><td>38.74%</td><td>835</td><td>898</td><td>965</td><td>1037</td><td>1114</td></tr><tr><td>40.74%</td><td>877</td><td>943</td><td>1014</td><td>1091</td><td>1172</td></tr><tr><td>42.74%</td><td>919</td><td>989</td><td>1064</td><td>1144</td><td>1230</td></tr><tr><td>44.74%</td><td>961</td><td>1034</td><td>1113</td><td>1198</td><td>1288</td></tr><tr><td>46.74%</td><td>1002</td><td>1080</td><td>1162</td><td>1251</td><td>1345</td></tr></tbody></table><h3>Kering</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>5.31%</td><td>76</td><td>97</td><td>123</td><td>159</td><td>210</td></tr><tr><td>6.31%</td><td>42</td><td>54</td><td>70</td><td>89</td><td>115</td></tr><tr><td>7.31%</td><td>18</td><td>27</td><td>37</td><td>49</td><td>64</td></tr><tr><td>8.31%</td><td>1</td><td>7</td><td>14</td><td>22</td><td>32</td></tr><tr><td>9.31%</td><td>-12</td><td>-8</td><td>-3</td><td>3</td><td>10</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>-17.03%</th><th>-15.03%</th><th>-13.03%</th><th>-11.03%</th><th>-9.03%</th></tr></thead><tbody><tr><td>14.22%</td><td>-18</td><td>-8</td><td>4</td><td>17</td><td>30</td></tr><tr><td>16.22%</td><td>-5</td><td>7</td><td>20</td><td>35</td><td>50</td></tr><tr><td>18.22%</td><td>8</td><td>22</td><td>37</td><td>53</td><td>70</td></tr><tr><td>20.22%</td><td>22</td><td>37</td><td>53</td><td>71</td><td>90</td></tr><tr><td>22.22%</td><td>35</td><td>51</td><td>69</td><td>89</td><td>110</td></tr></tbody></table><h3>Richemont</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (CHF)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.56%</td><td>122</td><td>130</td><td>139</td><td>149</td><td>163</td></tr><tr><td>8.56%</td><td>107</td><td>112</td><td>118</td><td>126</td><td>134</td></tr><tr><td>9.56%</td><td>95</td><td>99</td><td>103</td><td>109</td><td>115</td></tr><tr><td>10.56%</td><td>85</td><td>88</td><td>92</td><td>96</td><td>100</td></tr><tr><td>11.56%</td><td>78</td><td>80</td><td>83</td><td>86</td><td>89</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (CHF)</th><th>-0.20%</th><th>1.80%</th><th>3.80%</th><th>5.80%</th><th>7.80%</th></tr></thead><tbody><tr><td>19.96%</td><td>74</td><td>80</td><td>86</td><td>93</td><td>101</td></tr><tr><td>21.96%</td><td>81</td><td>88</td><td>95</td><td>103</td><td>111</td></tr><tr><td>23.96%</td><td>88</td><td>95</td><td>103</td><td>112</td><td>121</td></tr><tr><td>25.96%</td><td>95</td><td>103</td><td>112</td><td>121</td><td>131</td></tr><tr><td>27.96%</td><td>102</td><td>111</td><td>120</td><td>131</td><td>141</td></tr></tbody></table>
 <h2>Stated assumptions</h2>
 <p class="note">Risk-free rate 3.00%, equity risk premium 5.00%. These are assumptions, not measurements; the sensitivity grid above shows what they are worth. Betas are recomputed from five years of weekly returns against the Euro Stoxx 50 rather than taken from a data provider's undocumented field.</p>
 </body>
