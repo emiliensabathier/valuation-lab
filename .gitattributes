@@ -1,0 +1,10 @@
+# Generated artefacts are produced with LF endings (scripts/build_frozen_report.py and
+# scripts/build_fixture.py both write with newline="\n" or newline=""), and the parity test
+# (tests/test_report_matches_fixture.py) checks the committed report byte for byte against a
+# fresh render. Without this file, core.autocrlf=true rewrites these files with CRLF on
+# checkout on Windows, so every Windows clone starts with a spurious "modified" file before
+# the reader has touched anything.
+*.html text eol=lf
+*.csv text eol=lf
+*.json text eol=lf
+.gitattributes text eol=lf
