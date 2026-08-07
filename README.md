@@ -12,22 +12,30 @@ five years of weekly returns against the Euro Stoxx 50.
 
 | Company | Price | Modelled value | Implied growth | Normalized growth | WACC | Implied exit |
 | --- | --- | --- | --- | --- | --- | --- |
-| LVMH | 481.45 EUR | 313.51 EUR | 7.08% | -1.71% | 8.55% | 10.8x |
-| Hermès | 1626.00 EUR | 1063.80 EUR | 24.85% | 12.98% | 9.13% | 9.4x |
+| LVMH | 481.45 EUR | 313.21 EUR | 7.10% | -1.71% | 8.56% | 10.8x |
+| Hermès | 1626.00 EUR | 1063.78 EUR | 24.85% | 12.98% | 9.13% | 9.4x |
 | Kering | 289.75 EUR | 36.54 EUR | 7.98% | -13.03% | 7.31% | 14.5x |
-| Richemont | 196.15 CHF | 105.17 CHF | 19.97% | 3.80% | 9.42% | 10.8x |
+| Richemont | 196.15 CHF | 103.40 CHF | 20.48% | 3.80% | 9.56% | 10.6x |
 
-Full report with charts and sensitivity grids: [`reports/valuation.html`](reports/valuation.html).
+Full report, with per-company drivers, charts and sensitivity grids:
+[`reports/valuation.html`](reports/valuation.html). Kering's value sitting roughly 87% below
+its market price is the most striking number on that page; it is explained there, in the
+report itself, and again below under Known limitations — not softened, because the explanation
+is what makes the rest of the analysis worth trusting.
 
 These figures were generated on 2026-08-06 from a cached data pull, not fetched live while you
 are reading this. A committed fixture (`tests/fixtures/frozen.py`, `CAPTURED = "2026-08-06"`)
 freezes that same pull, and the regression suite replays the whole pipeline against it offline,
-checking every figure to a tight relative tolerance (1e-9 for arithmetic, looser for the
-root-found implied growth). Re-running with `--refresh` reproduces the method, not the exact
-cents: Richemont's price is FX-converted from EUR to CHF, and a fresh exchange-rate fetch moves
-its modelled value and implied growth by a few cents — enough to show up in the second decimal
-above, not enough to change the conclusion. The other three companies reproduce exactly across
-both pulls.
+checking every figure — including both sensitivity grids, roughly 200 cells across the four
+companies (two 5x5 grids each) — to a tight relative tolerance (1e-9 for arithmetic, looser
+for the root-found implied growth). The committed `reports/valuation.html` is rendered from
+this same frozen fixture
+(`scripts/build_frozen_report.py`), and a test checks the two stay byte-identical, so the page
+above is the artefact the test suite verifies, not a separate live pull that happens to agree
+with it. Re-running with `--refresh` reproduces the method, not the exact cents: Richemont's
+price is FX-converted from EUR to CHF, and a fresh exchange-rate fetch moves its modelled value
+and implied growth by a few cents — enough to show up in the second decimal above, not enough
+to change the conclusion. The other three companies reproduce exactly across both pulls.
 
 ## The point
 
@@ -58,10 +66,55 @@ to return that same rate — so the two cannot drift apart without a test failin
 A reverse DCF does not say a share is expensive. It says what the market assumes. Judging
 whether the implied growth is plausible for a given house is an analyst's work, not a model's.
 
-## Limitations
+## Known limitations
 
-Stated because they matter more than the headline figures.
+Stated because they matter more than the headline figures, and because an interviewer who
+checks the data will find every one of them.
 
+- **Four usable years of revenue, three growth observations, and a median of three is a
+  single observation wearing a statistic's name.** The data source returns five fiscal-year
+  columns per statement, but the oldest is empty for all four companies, leaving four usable
+  revenue figures and three year-on-year growth rates. The median of three numbers is the
+  middle one when sorted by value — not a blend, not an average. Concretely: LVMH's published
+  "normalized growth" of -1.71% is not a smoothed trend across several years, it is literally
+  its FY2023-to-FY2024 revenue change, selected only because it happens to sit between the
+  other two. EBIT margin, tax rate and the capex/D&A/NWC ratios are medians of four values
+  each (a genuine, if small, central tendency); revenue growth alone is a median of three, and
+  is the fragile one.
+- **Kering's valuation sits about 87% below its market price because the normalization window
+  is a company mid-collapse, not because of a modelling error.** Over FY2022-FY2025 its EBIT
+  margin fell from 26.1% to 7.3% and revenue fell from EUR 20.35bn to EUR 14.68bn. The model's
+  medians over that window — an 18.22% EBIT margin, a -13.03% revenue growth — are an honest
+  reading of a business still in its trough, projected forward from there rather than from the
+  scale it held three years ago. See `reports/valuation.html` for the same explanation next to
+  the number it explains, and the Drivers table for the inputs behind every company, not only
+  Kering's.
+- **No growth fade.** The explicit period holds each company's normalized growth flat for five
+  years, then switches straight to the 2% terminal rate with no transition. Kering compounds
+  its own -13.03% for five years running and then jumps to +2% overnight; Hermès does the same
+  at +12.98%. A real business does not reverse a five-year trend in a single year. A fade
+  schedule stepping down toward the terminal rate year by year would be more defensible, at
+  the cost of another parameter to justify.
+- **The exit-multiple cross-check inverts the ranking an analyst would expect.** It reduces to
+  `(FCFF / EBIT in the final year) × 1.02 / (WACC − 2%)` — a formula that rewards a low WACC
+  and a high FCFF/EBIT conversion, neither of which tracks the underlying quality of the
+  business. Kering combines the lowest WACC of the four (7.31%) with a high FCFF/EBIT
+  conversion (0.75) and gets the highest exit multiple (~14.5x); Hermès combines the
+  second-highest WACC (9.13%) with the lowest FCFF/EBIT conversion of the four (0.66) and gets
+  the lowest (~9.4x) — despite being the strongest of the four on margin, growth and net-debt
+  position. The multiple is doing arithmetic, not judgment.
+- **Kering carries the lowest WACC of the four (7.31%) because its equity collapsed alongside
+  its stock price, not because it is safer.** A lower market capitalization shifts the
+  capital-structure weights toward book debt — 33.8% debt weight for Kering, against 13.3%
+  (LVMH), 9.9% (Richemont) and 1.4% (Hermès) — priced at Kering's 3.43% pre-tax cost of debt.
+  A stressed credit ends up looking like cheaper capital because the stock fell, which is the
+  opposite of what a rising cost of distress should do to a discount rate.
+- **Capex/revenue stays below D&A in perpetuity for three of the four companies, inflating
+  their terminal values.** LVMH (-6.49% vs. +8.77%), Kering (-9.50% vs. +10.92%) and Richemont
+  (-4.94% vs. +7.23%) all reinvest, on the model's own normalized ratios, less than they
+  depreciate while still growing at 2% forever — a terminal state a company cannot actually
+  sustain indefinitely. Hermès is the exception (-6.72% vs. +5.77%): its normalized capex ratio
+  exceeds D&A, so this particular inflation does not apply to it.
 - **IFRS 16 lease liabilities are not adjusted.** Debt is taken as reported on the balance
   sheet, with lease obligations included exactly as the company classifies them there — no
   restatement to a pre-IFRS-16 basis and no separate capitalization of off-balance-sheet
@@ -69,12 +122,16 @@ Stated because they matter more than the headline figures.
   debt non-trivially. The approximation is acceptable here because the same convention is
   applied to all four houses, so a comparison between them is not distorted even though any
   single WACC or net-debt figure is not lease-adjusted in isolation.
+- **Hermès' implied growth (24.85%) sits close to the reverse DCF's 25% plausibility ceiling**
+  (`GROWTH_BRACKET = (-0.05, 0.25)` in `reverse.py`). A modest further rise in its share price
+  would push the root-finder past that bracket, and the model would refuse to publish a
+  growth figure rather than extrapolate past a limit chosen for plausibility, not derived from
+  anything structural. That refusal is the intended behaviour, not a bug: see `pipeline.py`'s
+  per-company failure isolation, which is exactly what a bracket miss triggers.
 - **The equity risk premium is an assumption**, fixed at 5.0%, alongside a 3.0% risk-free
   rate. Neither is measured; the sensitivity grid shows what they are worth.
 - **Terminal growth is fixed at 2%** over five explicit forecast years, not fitted or varied
   by company.
-- **Five years of statements is a short history** for a normalized margin. It is what the data
-  source provides, and it is why the normalization is a median rather than a mean.
 - **No segment build, no sum-of-the-parts.** These are conglomerate-ish businesses valued as
   single entities.
 - **The published figures are a frozen pull, not a live guarantee.** See the note under
@@ -97,10 +154,11 @@ Statements and prices are cached under `cache/` for a week; pass `--refresh` to 
 .venv/bin/python -m pytest --cov=src/vlab
 ```
 
-The suite runs offline against injected fetchers: 94 tests, 97% coverage overall, with
-`dcf.py`, `reverse.py`, `sensitivity.py`, `pipeline.py`, `report/build.py` and
-`report/charts.py` at 100%. Nothing in the default run touches the network — the regression
-suite replays the frozen fixture above instead of calling the data provider.
+The suite runs offline against injected fetchers: 113 tests, 98% coverage overall, with every
+module at 100% except `data/loader.py` (89%, the live-`yfinance`-only branches) and `wacc.py`
+(98%, the zero-market-variance guard in `levered_beta`). Nothing in the default run touches the
+network — the regression suite replays the frozen fixture above instead of calling the data
+provider, for both the scalar figures and both sensitivity grids.
 
 ## License
 
