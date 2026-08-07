@@ -180,9 +180,9 @@ Statements and prices are cached under `cache/` for a week; pass `--refresh` to 
 .venv\Scripts\python -m pytest --cov=src/vlab   # Windows
 ```
 
-The suite runs offline against injected fetchers: 117 tests, 98% coverage overall, with every
-module at 100% except `data/loader.py` (89%, the live-`yfinance`-only branches) and `wacc.py`
-(98%, the zero-market-variance guard in `levered_beta`). Nothing in the default run touches the
+The suite runs offline against injected fetchers, with 98% coverage overall and every module
+at 100% except `data/loader.py` (89%, the live-`yfinance`-only branches) and `wacc.py` (98%,
+the zero-market-variance guard in `levered_beta`). Nothing in the default run touches the
 network — the regression suite replays the frozen fixture above instead of calling the data
 provider, for both the scalar figures and both sensitivity grids.
 
