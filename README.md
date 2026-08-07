@@ -121,6 +121,21 @@ checks the data will find every one of them.
   depreciate while still growing at 2% forever — a terminal state a company cannot actually
   sustain indefinitely. Hermes is the exception (-6.72% vs. +5.77%): its normalized capex ratio
   exceeds D&A, so this particular inflation does not apply to it.
+- **Working capital is scaled to each year's revenue level, not to its growth, so it never
+  fades even in the terminal year.** `dcf.free_cash_flows` multiplies the normalized
+  `nwc_ratio` (a median of `Change In Working Capital / Total Revenue` across the reported
+  years) by that year's whole projected revenue -- including the terminal year, where growth
+  has already slowed to 2%. A company compounding at only the terminal rate still consumes
+  working capital in proportion to its entire revenue base forever, rather than in proportion
+  to the small incremental revenue that 2% growth is actually adding. Recomputing each
+  valuation with this term removed shows how much of it is riding on that assumption: value
+  per share rises 20.9% for LVMH, 24.0% for Kering, 16.1% for Richemont and 4.9% for Hermes --
+  up to a quarter of the valuation for three of the four companies. This is not a modelling
+  error: the treatment is internally consistent with how `nwc_ratio` itself is normalized, and
+  changing it would move every published figure, which is a decision for a future revision,
+  not this one. A fuller model would scale the working-capital investment to the *change* in
+  revenue year over year, so it shrinks toward zero as growth fades toward the terminal rate,
+  instead of scaling to a revenue level that keeps compounding.
 - **IFRS 16 lease liabilities are not adjusted.** Debt is taken as reported on the balance
   sheet, with lease obligations included exactly as the company classifies them there — no
   restatement to a pre-IFRS-16 basis and no separate capitalization of off-balance-sheet
