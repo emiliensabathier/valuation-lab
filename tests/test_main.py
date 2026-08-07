@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 import vlab.__main__ as entry
 from vlab.fundamentals import Drivers
@@ -40,9 +41,40 @@ def test_the_cli_prints_every_failure_it_could_not_value(
     output = tmp_path / "valuation.html"
     monkeypatch.setattr("sys.argv", ["vlab", "--output", str(output)])
 
-    entry.main()
+    with pytest.raises(SystemExit):
+        entry.main()
 
     printed = capsys.readouterr().out
     assert "Hermes" in printed
     assert "RMS.PA" in printed
     assert "no revenue growth reproduces the price" in printed
+
+
+def test_the_cli_exits_non_zero_when_any_company_was_refused(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """MINOR bug: a refusal that still returns exit code 0 is a silent failure to any script
+    or CI step that only checks the exit code. The page must still render -- a refusal is not
+    a crash -- but the process must not report success.
+    """
+    failures = [CompanyFailure("Hermes", "RMS.PA", "no revenue growth reproduces the price")]
+    monkeypatch.setattr(entry, "run", lambda **kwargs: ({}, failures))
+    output = tmp_path / "valuation.html"
+    monkeypatch.setattr("sys.argv", ["vlab", "--output", str(output)])
+
+    with pytest.raises(SystemExit) as exc_info:
+        entry.main()
+
+    assert exc_info.value.code != 0
+    assert output.exists()
+
+
+def test_the_default_output_is_not_the_committed_report() -> None:
+    """IMPORTANT bug: the README's documented command relies on --output defaulting to
+    reports/valuation.html, so following it verbatim performs a live fetch and silently
+    overwrites the committed, fixture-matched page -- breaking the guarantee
+    test_report_matches_fixture.py exists to enforce. The default must point somewhere else.
+    """
+    parser_default = entry.build_parser().get_default("output")
+
+    assert parser_default != "reports/valuation.html"
