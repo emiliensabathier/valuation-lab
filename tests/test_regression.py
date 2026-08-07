@@ -1,10 +1,12 @@
 import json
+import math
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from tests.fixtures.frozen import frozen_fetchers
 
-from vlab.pipeline import run
+from vlab.pipeline import CompanyResult, run
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -22,8 +24,12 @@ def expected() -> dict[str, dict[str, float]]:
 
 
 @pytest.fixture(scope="module")
-def recomputed(tmp_path_factory) -> dict[str, dict[str, float]]:
-    """Replay the whole pipeline against the frozen inputs, with no network."""
+def raw_results(tmp_path_factory) -> dict[str, CompanyResult]:
+    """Replay the whole pipeline against the frozen inputs, with no network.
+
+    Kept separate from ``recomputed`` below so both the scalar-field comparison and the
+    sensitivity-grid comparison read off one pipeline run instead of two.
+    """
     statements, prices = frozen_fetchers()
     results, failures = run(
         cache_dir=tmp_path_factory.mktemp("cache"),
@@ -31,6 +37,11 @@ def recomputed(tmp_path_factory) -> dict[str, dict[str, float]]:
         price_fetcher=prices,
     )
     assert not failures, failures
+    return results
+
+
+@pytest.fixture(scope="module")
+def recomputed(raw_results: dict[str, CompanyResult]) -> dict[str, dict[str, float]]:
     return {
         name: {
             field: getattr(result, field)
@@ -39,8 +50,30 @@ def recomputed(tmp_path_factory) -> dict[str, dict[str, float]]:
                 "normalized_growth", "wacc", "beta", "terminal_share", "exit_multiple",
             )
         }
-        for name, result in results.items()
+        for name, result in raw_results.items()
     }
+
+
+def _assert_grid_matches_fixture(
+    actual: pd.DataFrame, expected: dict[str, dict[str, float | None]]
+) -> None:
+    """Compare a recomputed sensitivity grid against its frozen ``{row: {column: value}}``.
+
+    Keys round-trip through JSON as strings (``str(0.0656)`` is exact for these values, since
+    Python's float-to-str is the shortest round-tripping representation), so both axes are
+    restated as strings before comparing rather than trusting key order or count alone.
+    """
+    assert {str(row) for row in actual.index} == set(expected)
+    for row in actual.index:
+        expected_row = expected[str(row)]
+        assert {str(column) for column in actual.columns} == set(expected_row)
+        for column in actual.columns:
+            actual_value = actual.loc[row, column]
+            reference = expected_row[str(column)]
+            if pd.isna(actual_value):
+                assert reference is None or math.isnan(reference)
+            else:
+                assert actual_value == pytest.approx(reference, rel=TOLERANCE_EXACT)
 
 
 def test_the_fixture_covers_every_peer(expected: dict[str, dict[str, float]]) -> None:
@@ -84,3 +117,18 @@ def test_richemont_is_valued_in_its_trading_currency(
     recomputed: dict[str, dict[str, float]],
 ) -> None:
     assert recomputed["Richemont"]["trading_currency"] == "CHF"
+
+
+def test_the_sensitivity_grids_match_the_frozen_fixture(
+    raw_results: dict[str, CompanyResult], expected: dict[str, dict[str, float]]
+) -> None:
+    # The published report shows two five-by-five grids per company -- 200 cells across the
+    # four companies -- that used to be checked only by sensitivity.py's own synthetic unit
+    # tests, never against these companies' real, frozen inputs. A transposed grid or a wrong
+    # axis default would pass every other test in this file and still put a wrong number in
+    # front of a reader.
+    for name, result in raw_results.items():
+        _assert_grid_matches_fixture(result.sensitivity, expected[name]["sensitivity"])
+        _assert_grid_matches_fixture(
+            result.margin_sensitivity, expected[name]["margin_sensitivity"]
+        )

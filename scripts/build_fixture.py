@@ -64,12 +64,20 @@ def main() -> None:
     frozen = {}
     for name, result in results.items():
         record = asdict(result)
-        record.pop("sensitivity")
-        record.pop("margin_sensitivity")
+        # DataFrame isn't asdict-JSON-able as-is; to_dict(orient="index") gives
+        # {row: {column: value}}, which round-trips through JSON with float keys stringified
+        # -- the same shape test_regression.py reads back and compares against a fresh run.
+        # These two grids are the ~200 published sensitivity cells that used to be checked
+        # only by synthetic unit tests, never against the real, frozen inputs.
+        record["sensitivity"] = result.sensitivity.to_dict(orient="index")
+        record["margin_sensitivity"] = result.margin_sensitivity.to_dict(orient="index")
         frozen[name] = record
 
+    # newline="" keeps this LF-only on every platform: write_text's default newline
+    # translation would otherwise turn every "\n" into "\r\n" on Windows, rewriting a file
+    # that is meant to diff cleanly regardless of which OS regenerated it.
     (FIXTURES / "expected_valuations.json").write_text(
-        json.dumps(frozen, indent=2, sort_keys=True), encoding="utf-8"
+        json.dumps(frozen, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline=""
     )
     print(f"fixture written for {len(frozen)} companies")
 
