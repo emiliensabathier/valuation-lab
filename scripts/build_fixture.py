@@ -8,15 +8,27 @@ precisely the guarantee the fixture exists to provide.
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
-from vlab.data.loader import Statements, load_prices, load_statements
-from vlab.pipeline import run
-from vlab.universe import MARKET_INDEX, PEERS, needs_conversion, tickers
+import pandas as pd
 
-FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
+ROOT = Path(__file__).resolve().parents[1]
+# tests/ has no __init__.py; it is only importable as "tests.fixtures.frozen" when the repo
+# root sits on sys.path, which pytest arranges for the test suite but a standalone script
+# invocation (``python scripts/build_fixture.py``) does not. Same pattern as
+# build_frozen_report.py, for the same reason.
+sys.path.insert(0, str(ROOT))
+
+from tests.fixtures.frozen import FrozenPriceFetcher  # noqa: E402
+
+from vlab.data.loader import Statements, load_prices, load_statements  # noqa: E402
+from vlab.pipeline import run  # noqa: E402
+from vlab.universe import MARKET_INDEX, PEERS, needs_conversion, tickers  # noqa: E402
+
+FIXTURES = ROOT / "tests" / "fixtures"
 CACHE = Path("cache")
 
 
@@ -49,32 +61,35 @@ def main() -> None:
         for company in PEERS
         if needs_conversion(company)
     ]
-    # Two different windows of the same pair, merged into one column. The 1mo/1d window feeds
-    # load_fx_rate's point-in-time conversion (the freshest close available); the 5y/1wk window
-    # -- the same period and cadence as the equity prices above -- feeds levered_beta's
-    # currency conversion, which needs a rate for every date in the regression, not just the
-    # latest one. combine_first prefers the daily window's more recent closes and falls back to
-    # the weekly window for the rest of the history.
+    # Two different windows of the same pair, production requests through two different
+    # (period, interval) calls to load_prices: the 1mo/1d window feeds load_fx_rate's
+    # point-in-time conversion (the freshest close available); the 5y/1wk window -- the same
+    # period and cadence as the equity prices above -- feeds levered_beta's currency
+    # conversion, which needs a rate for every date in the regression, not just the latest one.
     #
-    # An outer join onto ``series`` on each series' own dates, with no fill: forward-filling
-    # the combined FX column onto the equity grid would silently drop its true latest
-    # observation whenever the grids' last dates don't coincide. FrozenPriceFetcher recovers
-    # each column's native rows by dropping the ones the other columns padded with NaN, so a
-    # request for the FX pair alone still ends on its own most recent date instead of a stale,
-    # equity-grid-aligned one.
+    # They are kept in two separate files, one per cadence, rather than merged into a single
+    # column: merging let the daily window's closes silently overwrite same-dated weekly
+    # closes (5 of Richemont's 262 weekly EURCHF observations), pairing a Friday-cadence
+    # equity close with a Monday-cadence rate and reproducing production only to the last
+    # digit rather than exactly. FrozenPriceFetcher.__call__ picks the file matching the
+    # (period, interval) it is asked for, so a beta-regression request only ever sees the
+    # weekly-cadence rate and a point-in-time request only ever sees the daily-cadence one.
+    daily_pairs = []
     for pair in pairs:
-        long_history = load_prices([pair], cache_dir=CACHE)[pair]
-        latest = load_prices([pair], cache_dir=CACHE, period="1mo", interval="1d")[pair]
-        combined = latest.combine_first(long_history).rename(pair)
-        series = series.join(combined, how="outer")
+        weekly_history = load_prices([pair], cache_dir=CACHE)[pair]
+        series = series.join(weekly_history, how="outer")
+        daily_pairs.append(load_prices([pair], cache_dir=CACHE, period="1mo", interval="1d")[pair])
     series.to_csv(FIXTURES / "prices.csv")
+    if daily_pairs:
+        pd.concat(daily_pairs, axis=1).to_csv(FIXTURES / "fx_rates_daily.csv")
 
     # Then the outputs, computed from exactly those frozen inputs -- not from a second,
     # independent read of the live cache. Richemont's beta reads the EURCHF pair through two
     # separate calls at two different cadences (the point-in-time rate and the full history);
-    # replaying against ``series`` itself, the same combined frame just written to
-    # ``prices.csv``, is what guarantees expected_valuations.json matches what
-    # tests/fixtures/frozen.py's FrozenPriceFetcher will hand back later.
+    # replaying through the real FrozenPriceFetcher, against the same two files just written to
+    # ``prices.csv`` and ``fx_rates_daily.csv``, is what guarantees expected_valuations.json
+    # matches what tests/fixtures/frozen.py will hand back later -- including which cadence
+    # answers which request, not just which columns are available.
     #
     # A disposable, empty cache_dir is required here, not CACHE: load_prices and
     # load_statements check their on-disk cache *before* calling an injected fetcher, so
@@ -82,10 +97,6 @@ def main() -> None:
     # fetchers below and read the live per-cadence cache files instead -- the exact
     # inconsistency this replay exists to prevent (see build_frozen_report.py's identical
     # reasoning for the same pattern).
-    def _frozen_price_fetcher(requested: list[str], _period: str, _interval: str):
-        selected = series.loc[:, [t for t in requested if t in series.columns]]
-        return selected.dropna()
-
     def _frozen_statement_fetcher(ticker: str) -> Statements:
         return statements_by_ticker[ticker]
 
@@ -93,7 +104,7 @@ def main() -> None:
         results, failures = run(
             cache_dir=Path(disposable_cache),
             statement_fetcher=_frozen_statement_fetcher,
-            price_fetcher=_frozen_price_fetcher,
+            price_fetcher=FrozenPriceFetcher(),
         )
     if failures:
         raise RuntimeError(f"cannot freeze a fixture with unresolved failures: {failures}")

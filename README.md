@@ -15,7 +15,7 @@ five years of weekly returns against the Euro Stoxx 50.
 | LVMH | 481.45 EUR | 313.21 EUR | 7.10% | -1.71% | 8.56% | 10.8x |
 | Hermès | 1626.00 EUR | 1063.78 EUR | 24.85% | 12.98% | 9.13% | 9.4x |
 | Kering | 289.75 EUR | 36.54 EUR | 7.98% | -13.03% | 7.31% | 14.5x |
-| Richemont | 196.15 CHF | 108.91 CHF | 18.95% | 3.80% | 9.16% | 11.2x |
+| Richemont | 196.15 CHF | 108.92 CHF | 18.95% | 3.80% | 9.15% | 11.2x |
 
 Full report, with per-company drivers, charts and sensitivity grids:
 [`reports/valuation.html`](reports/valuation.html). Kering's value sitting roughly 87% below
@@ -32,13 +32,14 @@ for the root-found implied growth). The committed `reports/valuation.html` is re
 this same frozen fixture
 (`scripts/build_frozen_report.py`), and a test checks the two stay byte-identical, so the page
 above is the artefact the test suite verifies, not a separate live pull that happens to agree
-with it. Re-running `python -m vlab --refresh` reproduces the method, not the exact cents:
-Richemont's modelled value is FX-converted from EUR to CHF before it is compared to the
-franc-denominated price, and its beta is regressed on a EUR-converted version of its own price
-history (see Currencies kept apart, below) — so a fresh exchange-rate pull moves both the
-point conversion and the regression inputs by a small amount, shifting Richemont's modelled
-value and implied growth by a few cents to a few tenths of a percent. The other three
-companies reproduce exactly across both pulls.
+with it. Replaying these exact frozen inputs is exact, to the last digit shown, for all four
+companies — including Richemont, whose beta and modelled value depend on the EURCHF history
+(see Currencies kept apart, below); nothing about that conversion introduces approximation on
+its own. Re-running `python -m vlab --refresh`, by contrast, reproduces the method, not the
+exact cents: it pulls today's prices and today's exchange rate, not 2026-08-07's, so Richemont's
+modelled value and implied growth — both of which move with a fresh EURCHF quote — will differ
+by a few cents to a few tenths of a percent from the figures above. The other three companies
+have no currency conversion in their pipeline and reproduce exactly across both pulls.
 
 ## The point
 

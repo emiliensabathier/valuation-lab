@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-from tests.fixtures.frozen import frozen_fetchers
+from tests.fixtures.frozen import FrozenPriceFetcher, frozen_fetchers
 
 from vlab.pipeline import CompanyResult, run
 
@@ -78,6 +78,27 @@ def _assert_grid_matches_fixture(
 
 def test_the_fixture_covers_every_peer(expected: dict[str, dict[str, float]]) -> None:
     assert set(expected) == {"LVMH", "Hermes", "Kering", "Richemont"}
+
+
+def test_frozen_price_fetcher_honours_the_requested_cadence_for_richemonts_fx_pair() -> None:
+    """IMPORTANT bug: FrozenPriceFetcher ignored the ``period``/``interval`` it was called
+    with and always served the same merged column, regardless of which cadence asked for it.
+    Production requests EURCHF=X through two different calls -- 5y/1wk for the beta
+    regression, 1mo/1d for the point-in-time conversion -- and 5 of the 262 weekly dates fall
+    inside the daily window too. Ignoring the cadence let the daily-cadence close silently
+    overwrite the weekly-cadence one on those 5 dates, pairing a Friday-cadence equity close
+    with a Monday-cadence rate. The fetcher must return the series actually requested.
+    """
+    fetcher = FrozenPriceFetcher()
+    pair = "EURCHF=X"
+
+    weekly = fetcher([pair], "5y", "1wk")[pair]
+    daily = fetcher([pair], "1mo", "1d")[pair]
+
+    overlap = weekly.index.intersection(daily.index)
+    assert len(overlap) > 0, "fixture no longer has overlapping dates to distinguish cadences"
+    # Genuinely different data per cadence, not a single merged series served twice.
+    assert not weekly.loc[overlap].equals(daily.loc[overlap])
 
 
 def test_the_pipeline_still_produces_the_published_numbers(
