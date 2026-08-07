@@ -15,7 +15,7 @@ five years of weekly returns against the Euro Stoxx 50.
 | LVMH | 481.45 EUR | 313.21 EUR | 7.10% | -1.71% | 8.56% | 10.8x |
 | Hermès | 1626.00 EUR | 1063.78 EUR | 24.85% | 12.98% | 9.13% | 9.4x |
 | Kering | 289.75 EUR | 36.54 EUR | 7.98% | -13.03% | 7.31% | 14.5x |
-| Richemont | 196.15 CHF | 103.40 CHF | 20.48% | 3.80% | 9.56% | 10.6x |
+| Richemont | 196.15 CHF | 108.91 CHF | 18.95% | 3.80% | 9.16% | 11.2x |
 
 Full report, with per-company drivers, charts and sensitivity grids:
 [`reports/valuation.html`](reports/valuation.html). Kering's value sitting roughly 87% below
@@ -23,8 +23,8 @@ its market price is the most striking number on that page; it is explained there
 report itself, and again below under Known limitations — not softened, because the explanation
 is what makes the rest of the analysis worth trusting.
 
-These figures were generated on 2026-08-06 from a cached data pull, not fetched live while you
-are reading this. A committed fixture (`tests/fixtures/frozen.py`, `CAPTURED = "2026-08-06"`)
+These figures were generated on 2026-08-07 from a cached data pull, not fetched live while you
+are reading this. A committed fixture (`tests/fixtures/frozen.py`, `CAPTURED = "2026-08-07"`)
 freezes that same pull, and the regression suite replays the whole pipeline against it offline,
 checking every figure — including both sensitivity grids, roughly 200 cells across the four
 companies (two 5x5 grids each) — to a tight relative tolerance (1e-9 for arithmetic, looser
@@ -32,10 +32,13 @@ for the root-found implied growth). The committed `reports/valuation.html` is re
 this same frozen fixture
 (`scripts/build_frozen_report.py`), and a test checks the two stay byte-identical, so the page
 above is the artefact the test suite verifies, not a separate live pull that happens to agree
-with it. Re-running with `--refresh` reproduces the method, not the exact cents: Richemont's
-price is FX-converted from EUR to CHF, and a fresh exchange-rate fetch moves its modelled value
-and implied growth by a few cents — enough to show up in the second decimal above, not enough
-to change the conclusion. The other three companies reproduce exactly across both pulls.
+with it. Re-running `python -m vlab --refresh` reproduces the method, not the exact cents:
+Richemont's modelled value is FX-converted from EUR to CHF before it is compared to the
+franc-denominated price, and its beta is regressed on a EUR-converted version of its own price
+history (see Currencies kept apart, below) — so a fresh exchange-rate pull moves both the
+point conversion and the regression inputs by a small amount, shifting Richemont's modelled
+value and implied growth by a few cents to a few tenths of a percent. The other three
+companies reproduce exactly across both pulls.
 
 ## The point
 
@@ -59,7 +62,9 @@ to return that same rate — so the two cannot drift apart without a test failin
 - **Terminal value restated as an exit multiple**, because "3% forever" and "an exit at 40x
   EBIT" are the same assumption and only one of them is easy to judge.
 - **Currencies kept apart**: Richemont publishes in euros and trades in Swiss francs. The
-  model converts before comparing, and refuses to run if the rate is missing.
+  model converts before comparing — including the beta regression, which first converts
+  Richemont's CHF price history into euros so it is regressed against the euro-denominated
+  Euro Stoxx 50 in one currency, not two — and refuses to run if the rate is missing.
 
 ## What this does not say
 
@@ -136,14 +141,28 @@ checks the data will find every one of them.
   single entities.
 - **The published figures are a frozen pull, not a live guarantee.** See the note under
   Results: a live `--refresh` reproduces the method exactly for three of the four companies,
-  and Richemont's FX-converted figures to within a few cents.
+  and Richemont's figures to within a few cents to a few tenths of a percent.
 
 ## Running it
 
 ```bash
 python -m venv .venv
 .venv/bin/pip install -e ".[dev]"
-.venv/bin/python -m vlab --output reports/valuation.html
+.venv/bin/python -m vlab
+```
+
+This always performs a live fetch (subject to the on-disk cache below), so it writes to
+`reports/valuation.local.html` by default rather than the committed `reports/valuation.html` —
+the committed page is what the regression suite verifies against the frozen fixture
+(`tests/fixtures/`), and a live run overwriting it would silently break that guarantee for
+anyone who ran this command. Pass `--output reports/valuation.html` only if you deliberately
+want to replace the committed page with fresh, unfrozen numbers (this will also make
+`tests/test_report_matches_fixture.py` fail against the pre-refresh fixture until you re-freeze
+it — see Tests, below). To reproduce the committed page itself, byte for byte, from the frozen
+fixture instead of a live pull, run:
+
+```bash
+.venv/bin/python scripts/build_frozen_report.py
 ```
 
 Statements and prices are cached under `cache/` for a week; pass `--refresh` to force a fetch.
@@ -154,7 +173,7 @@ Statements and prices are cached under `cache/` for a week; pass `--refresh` to 
 .venv/bin/python -m pytest --cov=src/vlab
 ```
 
-The suite runs offline against injected fetchers: 113 tests, 98% coverage overall, with every
+The suite runs offline against injected fetchers: 117 tests, 98% coverage overall, with every
 module at 100% except `data/loader.py` (89%, the live-`yfinance`-only branches) and `wacc.py`
 (98%, the zero-market-variance guard in `levered_beta`). Nothing in the default run touches the
 network — the regression suite replays the frozen fixture above instead of calling the data
