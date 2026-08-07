@@ -148,8 +148,12 @@ checks the data will find every one of them.
 
 ```bash
 python -m venv .venv
+# Linux / macOS
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/python -m vlab
+# Windows
+.venv\Scripts\pip install -e ".[dev]"
+.venv\Scripts\python -m vlab
 ```
 
 This always performs a live fetch (subject to the on-disk cache below), so it writes to
@@ -163,7 +167,8 @@ it — see Tests, below). To reproduce the committed page itself, byte for byte,
 fixture instead of a live pull, run:
 
 ```bash
-.venv/bin/python scripts/build_frozen_report.py
+.venv/bin/python scripts/build_frozen_report.py   # Linux / macOS
+.venv\Scripts\python scripts/build_frozen_report.py   # Windows
 ```
 
 Statements and prices are cached under `cache/` for a week; pass `--refresh` to force a fetch.
@@ -171,7 +176,8 @@ Statements and prices are cached under `cache/` for a week; pass `--refresh` to 
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest --cov=src/vlab
+.venv/bin/python -m pytest --cov=src/vlab   # Linux / macOS
+.venv\Scripts\python -m pytest --cov=src/vlab   # Windows
 ```
 
 The suite runs offline against injected fetchers: 117 tests, 98% coverage overall, with every
