@@ -13,7 +13,7 @@ five years of weekly returns against the Euro Stoxx 50.
 | Company | Price | Modelled value | Implied growth | Normalized growth | WACC | Implied exit |
 | --- | --- | --- | --- | --- | --- | --- |
 | LVMH | 481.45 EUR | 313.21 EUR | 7.10% | -1.71% | 8.56% | 10.8x |
-| Hermès | 1626.00 EUR | 1063.78 EUR | 24.85% | 12.98% | 9.13% | 9.4x |
+| Hermes | 1626.00 EUR | 1063.78 EUR | 24.85% | 12.98% | 9.13% | 9.4x |
 | Kering | 289.75 EUR | 36.54 EUR | 7.98% | -13.03% | 7.31% | 14.5x |
 | Richemont | 196.15 CHF | 108.92 CHF | 18.95% | 3.80% | 9.15% | 11.2x |
 
@@ -97,7 +97,7 @@ checks the data will find every one of them.
   Kering's.
 - **No growth fade.** The explicit period holds each company's normalized growth flat for five
   years, then switches straight to the 2% terminal rate with no transition. Kering compounds
-  its own -13.03% for five years running and then jumps to +2% overnight; Hermès does the same
+  its own -13.03% for five years running and then jumps to +2% overnight; Hermes does the same
   at +12.98%. A real business does not reverse a five-year trend in a single year. A fade
   schedule stepping down toward the terminal rate year by year would be more defensible, at
   the cost of another parameter to justify.
@@ -105,21 +105,21 @@ checks the data will find every one of them.
   `(FCFF / EBIT in the final year) × 1.02 / (WACC − 2%)` — a formula that rewards a low WACC
   and a high FCFF/EBIT conversion, neither of which tracks the underlying quality of the
   business. Kering combines the lowest WACC of the four (7.31%) with a high FCFF/EBIT
-  conversion (0.75) and gets the highest exit multiple (~14.5x); Hermès combines the
+  conversion (0.75) and gets the highest exit multiple (~14.5x); Hermes combines the
   second-highest WACC (9.13%) with the lowest FCFF/EBIT conversion of the four (0.66) and gets
   the lowest (~9.4x) — despite being the strongest of the four on margin, growth and net-debt
   position. The multiple is doing arithmetic, not judgment.
 - **Kering carries the lowest WACC of the four (7.31%) because its equity collapsed alongside
   its stock price, not because it is safer.** A lower market capitalization shifts the
   capital-structure weights toward book debt — 33.8% debt weight for Kering, against 13.3%
-  (LVMH), 9.9% (Richemont) and 1.4% (Hermès) — priced at Kering's 3.43% pre-tax cost of debt.
+  (LVMH), 9.9% (Richemont) and 1.4% (Hermes) — priced at Kering's 3.43% pre-tax cost of debt.
   A stressed credit ends up looking like cheaper capital because the stock fell, which is the
   opposite of what a rising cost of distress should do to a discount rate.
 - **Capex/revenue stays below D&A in perpetuity for three of the four companies, inflating
   their terminal values.** LVMH (-6.49% vs. +8.77%), Kering (-9.50% vs. +10.92%) and Richemont
   (-4.94% vs. +7.23%) all reinvest, on the model's own normalized ratios, less than they
   depreciate while still growing at 2% forever — a terminal state a company cannot actually
-  sustain indefinitely. Hermès is the exception (-6.72% vs. +5.77%): its normalized capex ratio
+  sustain indefinitely. Hermes is the exception (-6.72% vs. +5.77%): its normalized capex ratio
   exceeds D&A, so this particular inflation does not apply to it.
 - **IFRS 16 lease liabilities are not adjusted.** Debt is taken as reported on the balance
   sheet, with lease obligations included exactly as the company classifies them there — no
@@ -128,7 +128,7 @@ checks the data will find every one of them.
   debt non-trivially. The approximation is acceptable here because the same convention is
   applied to all four houses, so a comparison between them is not distorted even though any
   single WACC or net-debt figure is not lease-adjusted in isolation.
-- **Hermès' implied growth (24.85%) sits close to the reverse DCF's 25% plausibility ceiling**
+- **Hermes' implied growth (24.85%) sits close to the reverse DCF's 25% plausibility ceiling**
   (`GROWTH_BRACKET = (-0.05, 0.25)` in `reverse.py`). A modest further rise in its share price
   would push the root-finder past that bracket, and the model would refuse to publish a
   growth figure rather than extrapolate past a limit chosen for plausibility, not derived from
