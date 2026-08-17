@@ -234,6 +234,15 @@ the zero-market-variance guard in `levered_beta`). Nothing in the default run to
 network — the regression suite replays the frozen fixture above instead of calling the data
 provider, for both the scalar figures and both sensitivity grids.
 
+## Related
+
+Three companion studies, same method: a frozen capture, a rendered report, and a
+limitations section longer than the results.
+
+- [rates-lab](https://github.com/emiliensabathier/rates-lab) — what the yield curve prices: policy path, inflation, term premium
+- [credit-lab](https://github.com/emiliensabathier/credit-lab) — which default score flags first, against real credit events
+- [portfolio-lab](https://github.com/emiliensabathier/portfolio-lab) — whether any allocation rule beats a static 60/40
+
 ## License
 
 MIT.
