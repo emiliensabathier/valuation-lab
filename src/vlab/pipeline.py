@@ -18,7 +18,7 @@ from vlab.dcf import assumptions_from, terminal_exit_multiple, value
 from vlab.errors import DataError, ValuationError
 from vlab.fundamentals import Drivers, drivers_from
 from vlab.report.build import build_report
-from vlab.reverse import implied_revenue_growth
+from vlab.reverse import implied_average_growth, implied_revenue_growth
 from vlab.sensitivity import default_margin_growth_grid, default_wacc_terminal_grid
 from vlab.universe import MARKET_INDEX, PEERS, Company, needs_conversion, tickers
 from vlab.wacc import compute_wacc
@@ -47,6 +47,7 @@ class CompanyResult:
     price: float
     value_per_share: float
     implied_growth: float
+    implied_average_growth: float
     normalized_growth: float
     wacc: float
     beta: float
@@ -235,6 +236,9 @@ def _value_company(
         price=price,
         value_per_share=value_per_share,
         implied_growth=implied_revenue_growth(drivers, assumptions, price_in_reporting),
+        implied_average_growth=implied_average_growth(
+            drivers, assumptions, price_in_reporting
+        ),
         normalized_growth=drivers.revenue_growth,
         wacc=cost_of_capital.value,
         beta=cost_of_capital.beta,

@@ -3,10 +3,22 @@
 Run manually after a deliberate methodology change, never in CI. Regenerating this in an
 automated job would silently re-baseline whatever the code currently produces, which is
 precisely the guarantee the fixture exists to provide.
+
+Two modes, and the distinction matters more than it looks:
+
+    python scripts/build_fixture.py --expectations-only   # the usual case
+    python scripts/build_fixture.py                       # re-capture the market data too
+
+A methodology change moves the *outputs* while the inputs stay exactly as captured. The
+default mode re-reads the live cache and rewrites the captured statements and prices as a
+side effect, so running it to pick up a model change silently re-dates the whole fixture
+and every published figure moves for two reasons at once -- the change you made, and a
+market that moved underneath it. Use --expectations-only unless re-capturing is the point.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import tempfile
@@ -22,7 +34,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # build_frozen_report.py, for the same reason.
 sys.path.insert(0, str(ROOT))
 
-from tests.fixtures.frozen import FrozenPriceFetcher  # noqa: E402
+from tests.fixtures.frozen import FrozenPriceFetcher, FrozenStatementFetcher  # noqa: E402
 
 from vlab.data.loader import Statements, load_prices, load_statements  # noqa: E402
 from vlab.pipeline import run  # noqa: E402
@@ -32,8 +44,8 @@ FIXTURES = ROOT / "tests" / "fixtures"
 CACHE = Path("cache")
 
 
-def main() -> None:
-    statements_dir = FIXTURES / "statements"
+def _capture_inputs(statements_dir: Path) -> None:
+    """Re-freeze the raw statements and prices from the live cache."""
     statements_dir.mkdir(parents=True, exist_ok=True)
 
     # Freeze the inputs first, so the test can rebuild them without a network.
@@ -83,6 +95,23 @@ def main() -> None:
     if daily_pairs:
         pd.concat(daily_pairs, axis=1).to_csv(FIXTURES / "fx_rates_daily.csv")
 
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--expectations-only",
+        action="store_true",
+        help="recompute the outputs from the committed inputs, leaving the capture alone",
+    )
+    args = parser.parse_args()
+
+    statements_dir = FIXTURES / "statements"
+    statements_dir.mkdir(parents=True, exist_ok=True)
+    if args.expectations_only:
+        print("replaying the committed capture; statements and prices left untouched")
+    else:
+        _capture_inputs(statements_dir)
+
     # Then the outputs, computed from exactly those frozen inputs -- not from a second,
     # independent read of the live cache. Richemont's beta reads the EURCHF pair through two
     # separate calls at two different cadences (the point-in-time rate and the full history);
@@ -97,13 +126,14 @@ def main() -> None:
     # fetchers below and read the live per-cadence cache files instead -- the exact
     # inconsistency this replay exists to prevent (see build_frozen_report.py's identical
     # reasoning for the same pattern).
-    def _frozen_statement_fetcher(ticker: str) -> Statements:
-        return statements_by_ticker[ticker]
-
+    # Read the inputs back through the same frozen fetchers the test suite uses, rather
+    # than from whatever _capture_inputs happened to hold in memory. Under
+    # --expectations-only nothing was held in memory at all, and under a full capture this
+    # proves the files just written are the ones that produce these numbers.
     with tempfile.TemporaryDirectory() as disposable_cache:
         results, failures = run(
             cache_dir=Path(disposable_cache),
-            statement_fetcher=_frozen_statement_fetcher,
+            statement_fetcher=FrozenStatementFetcher(),
             price_fetcher=FrozenPriceFetcher(),
         )
     if failures:

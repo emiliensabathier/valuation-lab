@@ -16,13 +16,20 @@ from dataclasses import replace
 
 from scipy.optimize import brentq
 
-from vlab.dcf import Assumptions, value
+from vlab.dcf import Assumptions, growth_path, value
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
 
 # Plausibility limits, not safety rails. A price that implies growth outside these bounds is
 # telling you something, and the model says so rather than pinning the answer to an edge.
-GROWTH_BRACKET = (-0.05, 0.25)
+#
+# The growth bracket is stated on the *first* explicit year, because that is the parameter
+# the solver moves: growth fades linearly from it to the terminal rate, so a first year of
+# 50% averages about 26% across the five explicit years. The bracket was (-0.05, 0.25) when
+# growth was held flat; keeping that ceiling under a fade would have refused two of the four
+# companies for being 25% at the front of a path that averages half of it, which is a limit
+# on the arithmetic rather than on the plausibility.
+GROWTH_BRACKET = (-0.20, 0.50)
 TERMINAL_BRACKET = (-0.01, 0.05)
 
 TOLERANCE = 1e-10
@@ -47,8 +54,21 @@ def _solve(field: str, bracket: tuple[float, float], drivers: Drivers,
 
 
 def implied_revenue_growth(drivers: Drivers, assumptions: Assumptions, price: float) -> float:
-    """The explicit-period revenue growth the market price implies, all else held normal."""
+    """The first-year revenue growth the market price implies, all else held normal.
+
+    Growth fades from this rate to the terminal rate across the explicit period, so this is
+    the front of a path rather than a rate sustained for five years. `implied_average_growth`
+    restates it as the average over that path, which is the number worth comparing against a
+    company's own history.
+    """
     return _solve("revenue_growth", GROWTH_BRACKET, drivers, assumptions, price)
+
+
+def implied_average_growth(drivers: Drivers, assumptions: Assumptions, price: float) -> float:
+    """The implied path restated as its mean, so it is comparable with a historical rate."""
+    first_year = implied_revenue_growth(drivers, assumptions, price)
+    path = growth_path(replace(assumptions, revenue_growth=first_year))
+    return sum(path) / len(path)
 
 
 def implied_terminal_growth(drivers: Drivers, assumptions: Assumptions, price: float) -> float:

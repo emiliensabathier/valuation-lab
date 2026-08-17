@@ -63,10 +63,10 @@ def test_the_failure_message_reports_the_bracket_and_what_it_produced() -> None:
         implied_revenue_growth(drivers, _assumptions(), absurd)
 
     message = str(excinfo.value)
-    assert "-0.05" in message and "0.25" in message
+    assert "-0.2" in message and "0.5" in message
     # The bracket alone is not enough: a message could name the right bounds while
     # reporting the wrong values reached at each end. Pin those down too.
-    assert "14.05" in message and "52.88" in message
+    assert "10.62" in message and "54.90" in message
 
 
 def test_the_round_trip_holds_when_held_assumptions_differ_from_drivers_and_defaults() -> None:

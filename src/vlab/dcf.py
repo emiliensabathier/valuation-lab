@@ -54,6 +54,29 @@ def assumptions_from(drivers: Drivers, wacc: float, terminal_growth: float) -> A
     )
 
 
+def growth_path(assumptions: Assumptions) -> list[float]:
+    """Growth for each explicit year, fading linearly to the terminal rate.
+
+    The first year grows at the company's normalized rate and the last explicit year
+    grows at the terminal rate, so the switch into the Gordon formula is continuous.
+
+    Without the fade the model asked a business to reverse a five-year trend in a single
+    year: Kering compounded its own -13.03% five times and then jumped to +2% overnight,
+    Hermes did the same at +12.98%. Neither is a forecast anyone would defend out loud,
+    and the discontinuity did most of its damage in the terminal value, which is where
+    most of the valuation sits.
+
+    Linear is a choice, not a result. A fade is one more assumption; what it is not is a
+    cliff.
+    """
+    if assumptions.years < 2:
+        return [assumptions.terminal_growth] * assumptions.years
+    step = (assumptions.terminal_growth - assumptions.revenue_growth) / (
+        assumptions.years - 1
+    )
+    return [assumptions.revenue_growth + step * year for year in range(assumptions.years)]
+
+
 def _project(drivers: Drivers, assumptions: Assumptions) -> list[tuple[float, float]]:
     """Project (revenue, EBIT) for each explicit forecast year.
 
@@ -64,8 +87,8 @@ def _project(drivers: Drivers, assumptions: Assumptions) -> list[tuple[float, fl
     """
     projected: list[tuple[float, float]] = []
     revenue = drivers.revenue
-    for _ in range(assumptions.years):
-        revenue *= 1.0 + assumptions.revenue_growth
+    for growth in growth_path(assumptions):
+        revenue *= 1.0 + growth
         ebit = revenue * assumptions.ebit_margin
         projected.append((revenue, ebit))
     return projected

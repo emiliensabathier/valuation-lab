@@ -19,7 +19,8 @@ def test_the_cli_writes_a_report(tmp_path: Path, monkeypatch) -> None:
     fake = {
         "LVMH": CompanyResult(
             name="LVMH", ticker="MC.PA", reporting_currency="EUR", trading_currency="EUR",
-            price=481.45, value_per_share=520.0, implied_growth=0.041, normalized_growth=0.062,
+            price=481.45, value_per_share=520.0, implied_growth=0.041,
+            implied_average_growth=0.031, normalized_growth=0.062,
             wacc=0.083, beta=0.84, cost_of_equity=0.095, cost_of_debt=0.030,
             equity_weight=0.85, debt_weight=0.15, terminal_share=0.71, exit_multiple=14.2,
             sensitivity=table, margin_sensitivity=table, drivers=drivers,

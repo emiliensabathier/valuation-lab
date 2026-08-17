@@ -20,6 +20,7 @@ class _Result:
     price: float
     value_per_share: float
     implied_growth: float
+    implied_average_growth: float
     normalized_growth: float
     wacc: float
     beta: float
@@ -48,13 +49,13 @@ def _results() -> dict[str, _Result]:
     margins = pd.DataFrame([[80.0, 95.0], [110.0, 130.0]], index=[0.18, 0.22], columns=[0.03, 0.07])
     return {
         "LVMH": _Result(
-            "LVMH", "MC.PA", "EUR", "EUR", 481.45, 520.0, 0.041, 0.062, 0.083, 0.84,
+            "LVMH", "MC.PA", "EUR", "EUR", 481.45, 520.0, 0.041, 0.025, 0.062, 0.083, 0.84,
             cost_of_equity=0.095, cost_of_debt=0.030, equity_weight=0.85, debt_weight=0.15,
             terminal_share=0.71, exit_multiple=14.2, sensitivity=table, margin_sensitivity=margins,
             drivers=_drivers(0.062, 0.24, 5_000_000_000.0),
         ),
         "Hermes": _Result(
-            "Hermes", "RMS.PA", "EUR", "EUR", 2100.0, 1600.0, 0.112, 0.089, 0.079, 0.71,
+            "Hermes", "RMS.PA", "EUR", "EUR", 2100.0, 1600.0, 0.112, 0.066, 0.089, 0.079, 0.71,
             cost_of_equity=0.088, cost_of_debt=0.025, equity_weight=0.95, debt_weight=0.05,
             terminal_share=0.78, exit_multiple=26.9, sensitivity=table, margin_sensitivity=margins,
             drivers=_drivers(0.089, 0.40, -1_000_000_000.0),
@@ -204,7 +205,7 @@ def test_kerings_valuation_gap_is_explained_when_kering_is_present() -> None:
     results = _results()
     kering_drivers = _drivers(-0.13, 0.18, 2_000_000_000.0)
     results["Kering"] = _Result(
-        "Kering", "KER.PA", "EUR", "EUR", 289.75, 36.54, 0.0798, -0.13, 0.0731, 1.36,
+        "Kering", "KER.PA", "EUR", "EUR", 289.75, 36.54, 0.0798, 0.0499, -0.13, 0.0731, 1.36,
         cost_of_equity=0.075, cost_of_debt=0.0343, equity_weight=0.662, debt_weight=0.338,
         terminal_share=0.71, exit_multiple=14.5, sensitivity=results["LVMH"].sensitivity,
         margin_sensitivity=results["LVMH"].margin_sensitivity, drivers=kering_drivers,

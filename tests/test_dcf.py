@@ -1,6 +1,6 @@
 import pytest
 
-from vlab.dcf import Assumptions, assumptions_from, free_cash_flows, value
+from vlab.dcf import Assumptions, assumptions_from, free_cash_flows, growth_path, value
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
 
@@ -28,18 +28,38 @@ def _assumptions(**overrides) -> Assumptions:
     return Assumptions(**base)
 
 
-def test_a_flat_business_produces_a_flat_cash_flow_stream() -> None:
-    flows = free_cash_flows(_drivers(), _assumptions())
+def test_a_business_already_at_its_terminal_rate_produces_a_flat_cash_flow_stream() -> None:
+    """The one case the fade leaves alone: nothing to fade towards."""
+    flows = free_cash_flows(_drivers(), _assumptions(terminal_growth=0.0))
 
     # Revenue 1000, EBIT margin 20%, tax 25% -> 150 every year, no capex, no D&A, no NWC.
     assert flows == [pytest.approx(150.0)] * 5
 
 
-def test_growth_compounds_into_the_cash_flows() -> None:
+def test_growth_fades_linearly_from_the_first_year_to_the_terminal_rate() -> None:
+    path = growth_path(_assumptions(revenue_growth=0.10, terminal_growth=0.02))
+
+    assert path[0] == pytest.approx(0.10)
+    assert path[-1] == pytest.approx(0.02)
+    assert path == pytest.approx([0.10, 0.08, 0.06, 0.04, 0.02])
+
+
+def test_a_single_explicit_year_grows_at_the_terminal_rate_rather_than_dividing_by_zero() -> None:
+    assert growth_path(_assumptions(revenue_growth=0.30, years=1)) == pytest.approx([0.02])
+
+
+def test_growth_compounds_into_the_cash_flows_along_the_faded_path() -> None:
+    """The trend is not held for five years, which is the whole point of the fade."""
     flows = free_cash_flows(_drivers(), _assumptions(revenue_growth=0.10))
 
     assert flows[0] == pytest.approx(1000.0 * 1.10 * 0.20 * 0.75)
-    assert flows[4] == pytest.approx(1000.0 * 1.10**5 * 0.20 * 0.75)
+
+    compounded = 1000.0
+    for growth in (0.10, 0.08, 0.06, 0.04, 0.02):
+        compounded *= 1.0 + growth
+    assert flows[4] == pytest.approx(compounded * 0.20 * 0.75)
+    # Held flat at 10% the final flow would be a fifth larger; that gap is the fade.
+    assert flows[4] < 1000.0 * 1.10**5 * 0.20 * 0.75
 
 
 def test_cash_consuming_ratios_reduce_the_flow_without_a_sign_flip() -> None:
@@ -53,10 +73,15 @@ def test_cash_consuming_ratios_reduce_the_flow_without_a_sign_flip() -> None:
 def test_the_valuation_matches_the_closed_form_on_a_flat_perpetuity() -> None:
     # Five flows of 150 discounted at 10%, then a terminal value of 150 * 1.02 / 0.08,
     # itself discounted five years. Every term is computable by hand.
-    drivers, assumptions = _drivers(), _assumptions()
+    #
+    # Terminal growth is set to the normalized growth so the fade has nowhere to go and the
+    # stream stays flat. With any other pair the flows are no longer hand-computable in one
+    # line, which would make this test check the arithmetic against a copy of itself.
+    drivers = _drivers()
+    assumptions = _assumptions(terminal_growth=0.0)
 
     explicit = sum(150.0 / 1.10**year for year in range(1, 6))
-    terminal = (150.0 * 1.02 / (0.10 - 0.02)) / 1.10**5
+    terminal = (150.0 / (0.10 - 0.0)) / 1.10**5
 
     result = value(drivers, assumptions)
 

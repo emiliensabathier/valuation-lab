@@ -7,18 +7,25 @@ does each share price already imply?
 
 ## Results
 
-Unlevered free cash flow, five explicit years, Gordon terminal value. Betas recomputed from
-five years of weekly returns against the Euro Stoxx 50.
+Unlevered free cash flow, five explicit years with growth fading linearly to the terminal
+rate, Gordon terminal value. Betas recomputed from five years of weekly returns against the
+Euro Stoxx 50.
 
-| Company | Price | Modelled value | Implied growth | Normalized growth | WACC | Implied exit |
-| --- | --- | --- | --- | --- | --- | --- |
-| LVMH | 481.45 EUR | 313.21 EUR | 7.10% | -1.71% | 8.56% | 10.8x |
-| Hermes | 1626.00 EUR | 1063.78 EUR | 24.85% | 12.98% | 9.13% | 9.4x |
-| Kering | 289.75 EUR | 36.54 EUR | 7.98% | -13.03% | 7.31% | 14.5x |
-| Richemont | 196.15 CHF | 108.92 CHF | 18.95% | 3.80% | 9.15% | 11.2x |
+| Company | Price | Modelled value | Implied growth, yr 1 | Implied growth, 5y avg | Normalized growth | WACC | Implied exit |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| LVMH | 481.45 EUR | 342.03 EUR | 11.75% | 6.87% | -1.71% | 8.56% | 10.8x |
+| Hermes | 1626.00 EUR | 877.95 EUR | 47.58% | 24.79% | 12.98% | 9.13% | 9.4x |
+| Kering | 289.75 EUR | 98.36 EUR | 13.59% | 7.79% | -13.03% | 7.31% | 14.5x |
+| Richemont | 196.15 CHF | 105.29 CHF | 35.31% | 18.65% | 3.80% | 9.15% | 11.2x |
+
+Read the two implied-growth columns together. The first is the front of a fading path, so it
+is not a rate anyone expects to be sustained; the second is what that path averages, and it
+is the number worth arguing with. Hermes at 24.79% average against its own 12.98% normalized
+history is the sharpest reading here: the price assumes the last four years repeat and then
+some, for five more.
 
 Full report, with per-company drivers, charts and sensitivity grids:
-[`reports/valuation.html`](reports/valuation.html). Kering's value sitting roughly 87% below
+[`reports/valuation.html`](reports/valuation.html). Kering's value sitting roughly 66% below
 its market price is the most striking number on that page; it is explained there, in the
 report itself, and again below under Known limitations — not softened, because the explanation
 is what makes the rest of the analysis worth trusting.
@@ -87,20 +94,37 @@ checks the data will find every one of them.
   other two. EBIT margin, tax rate and the capex/D&A/NWC ratios are medians of four values
   each (a genuine, if small, central tendency); revenue growth alone is a median of three, and
   is the fragile one.
-- **Kering's valuation sits about 87% below its market price because the normalization window
+- **Kering's valuation sits about 66% below its market price because the normalization window
   is a company mid-collapse, not because of a modelling error.** Over FY2022-FY2025 its EBIT
   margin fell from 26.1% to 7.3% and revenue fell from EUR 20.35bn to EUR 14.68bn. The model's
   medians over that window — an 18.22% EBIT margin, a -13.03% revenue growth — are an honest
   reading of a business still in its trough, projected forward from there rather than from the
-  scale it held three years ago. See `reports/valuation.html` for the same explanation next to
-  the number it explains, and the Drivers table for the inputs behind every company, not only
-  Kering's.
-- **No growth fade.** The explicit period holds each company's normalized growth flat for five
-  years, then switches straight to the 2% terminal rate with no transition. Kering compounds
-  its own -13.03% for five years running and then jumps to +2% overnight; Hermes does the same
-  at +12.98%. A real business does not reverse a five-year trend in a single year. A fade
-  schedule stepping down toward the terminal rate year by year would be more defensible, at
-  the cost of another parameter to justify.
+  scale it held three years ago. It used to be 87%: the growth fade below stops that -13.03%
+  compounding for five straight years, which was the single largest contributor to the old
+  figure. See `reports/valuation.html` for the same explanation next to the number it explains,
+  and the Drivers table for the inputs behind every company, not only Kering's.
+- **The growth fade is linear, and linear is a choice.** The explicit period used to hold
+  each company's normalized growth flat for five years and then jump to the 2% terminal rate
+  overnight — Kering compounding its own -13.03% five times, Hermes its +12.98%. No business
+  reverses a five-year trend in a single year, so growth now steps linearly from the
+  normalized rate in year one to the terminal rate in year five and the switch into Gordon is
+  continuous. What replaced a cliff is still an assumption: nothing here argues that the path
+  is straight rather than convex, and a company defending a premium would argue for convex.
+  One reassuring sign, and it is only that: the fade barely moves the *average* growth the
+  market price implies (Hermes 24.85% flat against 24.79% averaged over the fading path), so
+  it redistributes the implied growth rather than inventing or destroying it. What it does
+  move is the forward value, because that runs on the company's own normalized rate.
+- **Working capital is still scaled to the revenue level, and two attempts to fix it failed
+  on this data.** Scaling the investment to the *change* in revenue is the textbook treatment,
+  and it is not estimable here: LVMH and Kering both had revenue fall inside the four-year
+  window, so the denominator changes sign and the median of three ratios comes out positive
+  for both — working capital releasing cash as a business grows, which is not a thing. Taking
+  the stock ratio off the balance sheet instead fails differently: the reported Working
+  Capital line is current assets minus current liabilities, so it carries the cash pile, and
+  Hermes and Richemont price at 0.79 and 0.89 of revenue on it. Building operating working
+  capital from inventory, receivables and payables separately would be the real fix and is not
+  attempted here. The quantified effect of the current treatment is in the bullet below; it
+  stays disclosed rather than half-fixed.
 - **The exit-multiple cross-check inverts the ranking an analyst would expect.** It reduces to
   `(FCFF / EBIT in the final year) × 1.02 / (WACC − 2%)` — a formula that rewards a low WACC
   and a high FCFF/EBIT conversion, neither of which tracks the underlying quality of the
@@ -129,13 +153,11 @@ checks the data will find every one of them.
   working capital in proportion to its entire revenue base forever, rather than in proportion
   to the small incremental revenue that 2% growth is actually adding. Recomputing each
   valuation with this term removed shows how much of it is riding on that assumption: value
-  per share rises 20.9% for LVMH, 24.0% for Kering, 16.1% for Richemont and 4.9% for Hermes --
-  up to a quarter of the valuation for three of the four companies. This is not a modelling
-  error: the treatment is internally consistent with how `nwc_ratio` itself is normalized, and
-  changing it would move every published figure, which is a decision for a future revision,
-  not this one. A fuller model would scale the working-capital investment to the *change* in
-  revenue year over year, so it shrinks toward zero as growth fades toward the terminal rate,
-  instead of scaling to a revenue level that keeps compounding.
+  per share rises 20.7% for LVMH, 16.1% for Richemont, 12.5% for Kering and 4.8% for Hermes.
+  This is not a modelling error: the treatment is internally consistent with how `nwc_ratio`
+  itself is normalized. Scaling the investment to the *change* in revenue instead is the
+  textbook fix and it is not estimable on this data — see the growth-fade bullet above for
+  what was tried and why both alternatives failed.
 - **IFRS 16 lease liabilities are not adjusted.** Debt is taken as reported on the balance
   sheet, with lease obligations included exactly as the company classifies them there — no
   restatement to a pre-IFRS-16 basis and no separate capitalization of off-balance-sheet
@@ -143,12 +165,17 @@ checks the data will find every one of them.
   debt non-trivially. The approximation is acceptable here because the same convention is
   applied to all four houses, so a comparison between them is not distorted even though any
   single WACC or net-debt figure is not lease-adjusted in isolation.
-- **Hermes' implied growth (24.85%) sits close to the reverse DCF's 25% plausibility ceiling**
-  (`GROWTH_BRACKET = (-0.05, 0.25)` in `reverse.py`). A modest further rise in its share price
-  would push the root-finder past that bracket, and the model would refuse to publish a
-  growth figure rather than extrapolate past a limit chosen for plausibility, not derived from
+- **Hermes' first-year implied growth (47.58%) sits close to the reverse DCF's 50% ceiling**
+  (`GROWTH_BRACKET = (-0.20, 0.50)` in `reverse.py`). A modest further rise in its share price
+  would push the root-finder past that bracket, and the model would refuse to publish a growth
+  figure rather than extrapolate past a limit chosen for plausibility, not derived from
   anything structural. That refusal is the intended behaviour, not a bug: see `pipeline.py`'s
-  per-company failure isolation, which is exactly what a bracket miss triggers.
+  per-company failure isolation, which is exactly what a bracket miss triggers. The bracket
+  was (-0.05, 0.25) while growth was held flat and had to be widened for the fade, because the
+  solver now moves the *front* of a decaying path rather than a rate sustained for five years;
+  47.58% at the front averages 24.79%. Widening it to fit the arithmetic is exactly the kind of
+  move that quietly turns a plausibility limit into a formality, which is why the numbers on
+  both sides of the change are written down here rather than only the new ones.
 - **The equity risk premium is an assumption**, fixed at 5.0%, alongside a 3.0% risk-free
   rate. Neither is measured; the sensitivity grid shows what they are worth.
 - **Terminal growth is fixed at 2%** over five explicit forecast years, not fitted or varied

@@ -54,6 +54,7 @@ def _summary_table(results) -> str:
             f"{result.price:.2f} {result.trading_currency}",
             f"{result.value_per_share:.2f} {result.trading_currency}",
             _pct(result.implied_growth),
+            _pct(result.implied_average_growth),
             _pct(result.normalized_growth),
             _pct(result.wacc),
             _num(result.beta),
@@ -61,7 +62,8 @@ def _summary_table(results) -> str:
             f"{result.exit_multiple:.1f}x",
         ])
     return _table(
-        ["Company", "Price", "Modelled value", "Implied growth", "Normalized growth",
+        ["Company", "Price", "Modelled value", "Implied growth, year 1",
+         "Implied growth, 5y average", "Normalized growth",
          "WACC", "Beta", "Terminal share", "Implied exit"],
         rows,
     )
