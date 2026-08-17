@@ -35,11 +35,17 @@ def figure_to_svg(fig: Figure) -> str:
     return markup[markup.index("<svg") :]
 
 
-def implied_growth_chart(implied: dict[str, float], normalized: dict[str, float]) -> str:
+def implied_growth_figure(implied: dict[str, float], normalized: dict[str, float]) -> Figure:
     """Implied growth against the company's own normalized history, side by side.
 
     This is the chart the report exists for. The gap between the two bars is the question:
     the market is paying for growth above or below what this business has actually delivered.
+
+    ``implied`` is the average over the fading explicit period, not its first year, so both
+    bars are the same kind of number.
+
+    Returned as a figure rather than as markup, because the README needs the same chart as a
+    raster: GitHub shows a committed HTML report as source.
     """
     names = list(implied)
     positions = range(len(names))
@@ -58,7 +64,12 @@ def implied_growth_chart(implied: dict[str, float], normalized: dict[str, float]
     axes.axhline(0.0, linewidth=0.8, color="#444")
     axes.legend(frameon=False)
     axes.grid(True, axis="y", alpha=0.25)
-    return figure_to_svg(fig)
+    return fig
+
+
+def implied_growth_chart(implied: dict[str, float], normalized: dict[str, float]) -> str:
+    """The implied-growth chart as inline SVG, for the report."""
+    return figure_to_svg(implied_growth_figure(implied, normalized))
 
 
 def value_bridge_chart(results: dict[str, tuple[float, float]]) -> str:

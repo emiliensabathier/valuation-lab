@@ -24,6 +24,12 @@ is the number worth arguing with. Hermes at 24.79% average against its own 12.98
 history is the sharpest reading here: the price assumes the last four years repeat and then
 some, for five more.
 
+![Implied revenue growth against normalized historical growth, for each of the four houses](docs/implied-growth.png)
+
+Every blue bar sits above its orange one, which is the finding: at these prices the market
+is paying for more growth than any of the four has delivered. Kering is the extreme — the
+price assumes +7.8% a year from a business whose reported revenue has been shrinking at 13%.
+
 Full report, with per-company drivers, charts and sensitivity grids:
 [`reports/valuation.html`](reports/valuation.html). Kering's value sitting roughly 66% below
 its market price is the most striking number on that page; it is explained there, in the

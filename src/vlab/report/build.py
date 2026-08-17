@@ -254,7 +254,10 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
             f"<style>{STYLE}</style>\n</head>\n<body>\n{body}\n</body>\n</html>\n"
         )
 
-    implied = {result.name: result.implied_growth for result in results.values()}
+    # The averaged path, not the first year of it. Normalized growth is a single rate
+    # across four reported years; putting a decaying path's opening rate next to it in a
+    # bar chart would compare two different quantities and flatter every gap.
+    implied = {result.name: result.implied_average_growth for result in results.values()}
     normalized = {result.name: result.normalized_growth for result in results.values()}
     prices = {
         result.name: (result.price, result.value_per_share) for result in results.values()
