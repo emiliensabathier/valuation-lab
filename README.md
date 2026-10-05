@@ -12,10 +12,10 @@ Frozen data pull of 2026-08-07. Full report, with drivers, WACC bridge and sensi
 
 | Company | Price | Modelled value | Implied growth, yr 1 | Implied growth, 5y avg | Normalized growth | WACC | Implied exit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| LVMH | 481.45 EUR | 275.58 EUR | 22.76% | 12.38% | -1.71% | 8.95% | 7.6x |
-| Hermes | 1626.00 EUR | 863.93 EUR | 49.46% | 25.73% | 12.98% | 9.23% | 8.5x |
-| Kering | 289.75 EUR | 45.39 EUR | 39.55% | 20.78% | -13.03% | 7.95% | 7.2x |
-| Richemont | 196.15 CHF | 92.31 CHF | 45.85% | 23.93% | 3.80% | 9.42% | 8.6x |
+| LVMH | 481.45 EUR | 265.96 EUR | 24.43% | 13.22% | -1.71% | 8.95% | 7.4x |
+| Hermes | 1626.00 EUR | 872.79 EUR | 48.79% | 25.40% | 12.98% | 9.23% | 8.6x |
+| Kering | 289.75 EUR | 72.30 EUR | 28.46% | 15.23% | -13.03% | 7.95% | 8.9x |
+| Richemont | 196.15 CHF | 91.95 CHF | 46.11% | 24.05% | 3.80% | 9.42% | 8.5x |
 
 The first implied-growth column is the front of a path that fades linearly to 2%; the second
 is that path's average, and it is the number to compare with the company's own history.
@@ -25,9 +25,9 @@ is that path's average, and it is the number to compare with the company's own h
 **How to read it.** Every implied average sits above the normalized history, but the gap
 measures the market against *this model*, and the model leans low (see Limitations): working
 capital drains cash even at zero growth, cash flows are discounted at year-end, betas are raw
-and priced at a 5% equity risk premium, median capex includes property purchases, and
+and priced at a 5% equity risk premium, capex still carries the property the houses kept, and
 four-year medians catch some houses in a downturn. Re-solved at a WACC two points lower, the
-implied average drops to 4.58% (LVMH), 16.89% (Hermes), 10.45% (Kering) and 15.39%
+implied average drops to 5.32% (LVMH), 16.59% (Hermes), 5.59% (Kering) and 15.51%
 (Richemont). The defensible reading: the market prices more growth than these normalized
 inputs credit, most clearly for Hermes and Richemont. It is not a claim that any share is
 mispriced.
@@ -36,8 +36,11 @@ mispriced.
 
 - **Free cash flow to the firm**: `EBIT x (1 - tax) + D&A + capex + lease payments + change in
   working capital`, five explicit years, Gordon terminal value at 2%.
-- **Normalized drivers**: every ratio is a median across the reported years, not the latest
-  value.
+- **Normalized drivers**: margin, tax, D&A, lease and working-capital ratios are medians
+  across the reported years, not the latest value. Capex is pooled over the window net of
+  property disposals (`Sale Of PPE`): property bought one year and sold back into a
+  sale-and-leaseback the next is otherwise charged and never credited, and the rent on what was
+  sold is already in the lease payment.
 - **Leases, pre-IFRS 16, consistently**: the lease payment (last year's current lease
   liability plus after-tax lease interest) is charged in free cash flow; lease liabilities are
   excluded from net debt and from the WACC debt weight. Counting leases as debt *and* as a
@@ -58,17 +61,17 @@ mispriced.
 - **Revenue growth is a median of three.** Four usable fiscal years give three growth rates;
   LVMH's -1.71% is literally its FY2023-to-FY2024 change.
 - **Working capital scales with the revenue level**, not its change, so it consumes cash even
-  in the terminal year. Removing the term lifts value per share by 25.4% (LVMH), 25.3% (Kering),
-  18.3% (Richemont) and 5.1% (Hermes). Scaling to the change in revenue is not estimable here
+  in the terminal year. Removing the term lifts value per share by 26.3% (LVMH), 15.9% (Kering),
+  18.3% (Richemont) and 5.0% (Hermes). Scaling to the change in revenue is not estimable here
   (revenue fell inside the window for LVMH and Kering), and the reported Working Capital line
   carries the cash pile; an operating build from inventory, receivables and payables is not
   attempted.
-- **Capex includes property.** Kering's capex ran 5.26%, 13.34%, 19.61% and 5.66% of revenue
-  over FY2022-FY2025; the middle years carry flagship real-estate purchases (land and buildings
-  rose by about EUR 2.8bn, partly sold in FY2025). The 9.50% median is kept as reported, not
-  adjusted: at its FY2025 ratio of 5.66% Kering's value would be about 102 EUR, not 45.39.
-  LVMH's FY2023 capex has the same shape.
-- **Kering's 84% gap** is a normalization over a downturn: EBIT margin ran 26.12%, 23.48%,
+- **Capex still carries property.** Kering's gross capex ran 5.26%, 13.34%, 19.61% and 5.66%
+  of revenue over FY2022-FY2025: flagship real estate bought in the middle years, EUR 2.16bn of
+  it sold in FY2025. Net of disposals and pooled, the model charges 7.69% (a median of the gross
+  ratios would charge 9.50% and value Kering at 45.39 EUR). The buildings Kering kept are still
+  charged as if they were recurring store spending; LVMH's FY2023 capex has the same shape.
+- **Kering's 75% gap** is a normalization over a downturn: EBIT margin ran 26.12%, 23.48%,
   12.96%, 7.33%, so the 18.22% median sits above the latest year, while the -13.03% growth
   median is close to the latest rate. The report's Kering note is generated from these figures.
 - **Lease payments are estimated.** The data has no lease-payment line; principal is the prior
@@ -77,7 +80,7 @@ mispriced.
 - **Discount-rate inputs are assumptions.** Risk-free 3%, ERP 5%, raw betas of 1.25-1.39 with
   no shrinkage toward one, year-end discounting. Kering's WACC is the lowest (7.95%) because its
   fallen market cap raises the book-debt weight to 25.15%, not because it is safer.
-- **Hermes sits at the edge of the solver.** Its first-year implied growth (49.46%) is just
+- **Hermes sits at the edge of the solver.** Its first-year implied growth (48.79%) is just
   under the 50% ceiling of `GROWTH_BRACKET`; a slightly higher price would make the model
   refuse to publish rather than extrapolate. The ceiling is a plausibility limit, not derived.
 - **The growth fade is linear**, a choice; a company defending a premium would argue convex.
@@ -103,7 +106,7 @@ After a methodology change, regenerate in order: `scripts/build_fixture.py
 .venv/bin/python -m pytest --cov=src/vlab
 ```
 
-141 tests, offline against injected fetchers, 98% coverage (`data/loader.py` at 89%: the
+143 tests, offline against injected fetchers, 98% coverage (`data/loader.py` at 89%: the
 live-`yfinance` branches). The regression suite replays the frozen fixture and checks every
 published figure, both sensitivity grids and the lower-WACC re-solve; a further test requires
 the committed report to match a fresh render byte for byte. The full suite runs in under a

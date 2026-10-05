@@ -180,9 +180,9 @@ def _kering_collapse_note(results) -> str:
         parts.append(f" Yearly revenue growth ran {_series(drivers.revenue_growths)}.")
     if drivers.capex_ratios:
         parts.append(
-            f" Capex over revenue ran {_series(drivers.capex_ratios)}; the median of "
-            f"{_pct(drivers.capex_ratio)} is taken over years that include property "
-            "purchases, not only store and replacement spending."
+            f" Gross capex over revenue ran {_series(drivers.capex_ratios)}, years that "
+            "include property purchases; pooled over the window net of property disposals, "
+            f"the model charges {_pct(drivers.capex_ratio)}."
         )
     parts.append(
         " The modelled value is what those medians are worth if they persist; the market "
@@ -235,11 +235,12 @@ def _bias_caveat() -> str:
         "change, so it drains cash every year even at zero growth; cash flows are discounted "
         "at year-end, not mid-year; betas are raw regression betas, not shrunk toward one, "
         "which raises the cost of equity of any beta above one, and they are priced at a "
-        f"{_pct(EQUITY_RISK_PREMIUM)} equity risk premium; median capex includes years of property "
-        "purchases, not only replacement spending; and four-year medians anchor margins to a "
-        "window that is a downturn for some houses. The table below re-solves the implied "
-        "growth at a lower discount rate. Read together, the market prices more growth than "
-        "this model credits &mdash; which is not the same as saying a share is mispriced.</div>"
+        f"{_pct(EQUITY_RISK_PREMIUM)} equity risk premium; capex, even net of disposals, still "
+        "carries property the houses kept, not only replacement spending; and four-year "
+        "medians anchor margins to a window that is a downturn for some houses. The table "
+        "below re-solves the implied growth at a lower discount rate. Read together, the "
+        "market prices more growth than this model credits &mdash; which is not the same as "
+        "saying a share is mispriced.</div>"
     )
 
 
@@ -350,9 +351,11 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
     sections += [
         "<h2>Drivers</h2>",
         '<p class="note">What each valuation is actually built from. Revenue and net debt '
-        "are the latest reported fiscal year; EBIT margin, tax rate, and the capex, D&amp;A, "
+        "are the latest reported fiscal year; EBIT margin, tax rate, and the D&amp;A, "
         "lease-payment and change-in-working-capital ratios are medians across the fiscal "
-        "years listed. "
+        "years listed. Capex is pooled over the same years net of property disposals, "
+        "because property bought one year and sold back the next would otherwise be charged "
+        "and never credited. "
         "Revenue growth is normalized the same way and shown in the Summary table above, not "
         "repeated here. Capex, lease payments and the change in working capital are negative "
         "exactly when they consume cash; D&amp;A is positive, added back as a non-cash "

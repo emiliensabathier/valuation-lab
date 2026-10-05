@@ -1,10 +1,10 @@
 """Normalized operating drivers, derived from the reported statements.
 
-Every ratio is a median across the reported years rather than the latest value. That is what
-makes a company in a bad year valuable at all: extrapolating a trough produces an absurd
-number, and extrapolating a peak produces a flattering one. The normalization is a stated
-assumption, surfaced in the report and pushed through the sensitivity grid — not a quiet
-smoothing.
+Every ratio but capex is a median across the reported years rather than the latest value.
+That is what makes a company in a bad year valuable at all: extrapolating a trough produces
+an absurd number, and extrapolating a peak produces a flattering one. The normalization is a
+stated assumption, surfaced in the report and pushed through the sensitivity grid — not a
+quiet smoothing.
 """
 
 from __future__ import annotations
@@ -42,9 +42,13 @@ class Drivers:
     ``Drivers(...)`` fixtures across the test suite, which predate this field, stay valid;
     only ``drivers_from`` populates it from real statements.
 
+    ``capex_ratio`` is pooled over the window net of property disposals rather than a median
+    (see ``_net_capex_ratio``).
+
     ``ebit_margins``, ``revenue_growths`` and ``capex_ratios`` are the yearly values behind
-    three of the medians, oldest first, so the report can say what a median smooths over from
-    the figures themselves rather than from prose written against one year's data.
+    the margin, growth and capex figures, oldest first (``capex_ratios`` gross of disposals),
+    so the report can say what the normalization smooths over from the figures themselves
+    rather than from prose written against one year's data.
     """
 
     revenue: float
@@ -106,6 +110,26 @@ def _lease_payment_ratio(
     return -float(np.median(ratios.to_numpy()))
 
 
+def _net_capex_ratio(
+    capex: pd.Series, disposals: pd.Series, revenue: pd.Series, ticker: str
+) -> float:
+    """Capex net of property disposals, pooled over the window, as a share of revenue.
+
+    Capex is lumpy where medians of margins are not: a house that buys its flagship buildings
+    in one year and sells them back into a sale-and-leaseback the next shows two years of
+    inflated gross capex and one disposal that a median of yearly gross ratios never sees.
+    Summing capex and disposals over the window before dividing charges only the property the
+    company kept. The rent it then pays on the buildings it sold is already in the lease
+    payment, so nothing is counted twice.
+    """
+    frame = pd.concat(
+        [capex, disposals, revenue], axis=1, keys=["capex", "disposals", "revenue"], sort=False
+    ).dropna()
+    if frame.empty:
+        raise ValuationError(f"{ticker}: no year reports capex, disposals and revenue together")
+    return float((frame["capex"].sum() + frame["disposals"].sum()) / frame["revenue"].sum())
+
+
 def _history(numerator: pd.Series, denominator: pd.Series) -> tuple[float, ...]:
     """Yearly ratios, oldest first, over the years where both lines are reported."""
     return tuple(float(value) for value in (numerator / denominator).dropna().sort_index())
@@ -122,6 +146,7 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
     interest = require(income, "Interest Expense", ticker)
 
     capex = require(cashflow, "Capital Expenditure", ticker)
+    disposals = require(cashflow, "Sale Of PPE", ticker)
     depreciation = require(cashflow, "Depreciation And Amortization", ticker)
     working_capital = require(cashflow, "Change In Working Capital", ticker)
 
@@ -158,7 +183,7 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
         revenue_growth=float(np.median(growth.to_numpy())),
         ebit_margin=margin,
         tax_rate=tax_rate,
-        capex_ratio=_median_ratio(capex, revenue),
+        capex_ratio=_net_capex_ratio(capex, disposals, revenue, ticker),
         da_ratio=_median_ratio(depreciation, revenue),
         nwc_ratio=_median_ratio(working_capital, revenue),
         net_debt=float(debt.iloc[0] - leases.iloc[0] - cash.iloc[0]),

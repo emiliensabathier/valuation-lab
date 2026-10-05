@@ -94,8 +94,10 @@ def _pipeline_statements(ticker: str) -> Statements:
         columns=periods,
     )
     cashflow = pd.DataFrame(
-        [[-0.06 * r for r in revenue], [0.10 * r for r in revenue], [-0.01 * r for r in revenue]],
-        index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital"],
+        [[-0.06 * r for r in revenue], [0.10 * r for r in revenue], [-0.01 * r for r in revenue],
+         [0.0] * 3],
+        index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital",
+               "Sale Of PPE"],
         columns=periods,
     )
     balance = pd.DataFrame(

@@ -25,8 +25,10 @@ def _statements(
     cashflow = pd.DataFrame(
         [[-0.06 * value for value in revenue],
          [0.10 * value for value in revenue],
-         [-0.01 * value for value in revenue]],
-        index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital"],
+         [-0.01 * value for value in revenue],
+         [0.0] * n],
+        index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital",
+               "Sale Of PPE"],
         columns=periods,
     )
     # Balance-sheet rows deliberately vary across periods. Constant rows would make the
@@ -77,8 +79,10 @@ def test_fiscal_years_excludes_a_column_with_no_reported_revenue() -> None:
         columns=periods,
     )
     cashflow = pd.DataFrame(
-        [[-6.0, -5.4, -4.8, -4.2], [10.0, 9.0, 8.0, 7.0], [-1.0, -0.9, -0.8, -0.7]],
-        index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital"],
+        [[-6.0, -5.4, -4.8, -4.2], [10.0, 9.0, 8.0, 7.0], [-1.0, -0.9, -0.8, -0.7],
+         [0.0, 0.0, 0.0, 0.0]],
+        index=["Capital Expenditure", "Depreciation And Amortization", "Change In Working Capital",
+               "Sale Of PPE"],
         columns=periods,
     )
     balance = pd.DataFrame(
@@ -121,6 +125,29 @@ def test_cash_consuming_ratios_keep_their_reported_negative_sign() -> None:
     assert drivers.capex_ratio == pytest.approx(-0.06)
     assert drivers.nwc_ratio == pytest.approx(-0.01)
     assert drivers.da_ratio == pytest.approx(0.10)
+
+
+def test_capex_is_pooled_over_the_window_net_of_property_disposals() -> None:
+    # Kering's shape: property bought in two years and largely sold back in the last one. A
+    # median of yearly gross ratios keeps the purchases and ignores the sale; pooling capex net
+    # of disposals over the window charges only what the company kept.
+    statements = _statements([100.0, 100.0, 100.0, 100.0], [20.0, 20.0, 20.0, 20.0])
+    statements.cashflow.loc["Capital Expenditure"] = [-5.0, -20.0, -15.0, -5.0]
+    statements.cashflow.loc["Sale Of PPE"] = [15.0, 0.0, 0.0, 0.0]
+
+    drivers = drivers_from(statements, "KER.PA")
+
+    assert drivers.capex_ratio == pytest.approx((-45.0 + 15.0) / 400.0)
+    # The yearly history stays gross, so the report can still show the purchases.
+    assert drivers.capex_ratios == pytest.approx((-0.05, -0.15, -0.20, -0.05))
+
+
+def test_a_missing_disposals_line_raises_rather_than_counting_as_zero() -> None:
+    statements = _statements([100.0, 90.0], [20.0, 18.0])
+    statements.cashflow.drop(index="Sale Of PPE", inplace=True)
+
+    with pytest.raises(DataError, match="Sale Of PPE"):
+        drivers_from(statements, "MC.PA")
 
 
 def test_the_balance_sheet_is_read_from_the_latest_reported_period() -> None:
