@@ -26,12 +26,13 @@ DPI = 110
 def figure_to_svg(fig: Figure) -> str:
     """Serialize a figure as inline SVG markup, stripped of its XML preamble.
 
-    ``metadata={"Date": None}`` suppresses the embedded creation timestamp, for the same
-    reason as the fixed hash salt above: without it, the SVG carries the wall-clock time it
-    was rendered, and the report would never reproduce byte-for-byte even from unchanged data.
+    ``metadata={"Date": None, "Creator": None}`` suppresses the embedded creation timestamp
+    and Matplotlib version, for the same reason as the fixed hash salt above: without it, the
+    SVG carries the wall-clock time and library patch release it was rendered with, and the
+    report would never reproduce byte-for-byte even from unchanged data.
     """
     buffer = io.StringIO()
-    fig.savefig(buffer, format="svg", bbox_inches="tight", metadata={"Date": None})
+    fig.savefig(buffer, format="svg", bbox_inches="tight", metadata={"Date": None, "Creator": None})
     markup = buffer.getvalue()
     return markup[markup.index("<svg") :]
 
