@@ -23,7 +23,8 @@ def test_the_cli_writes_a_report(tmp_path: Path, monkeypatch) -> None:
             implied_average_growth=0.031, normalized_growth=0.062,
             wacc=0.083, beta=0.84, cost_of_equity=0.095, cost_of_debt=0.030,
             equity_weight=0.85, debt_weight=0.15, terminal_share=0.71, exit_multiple=14.2,
-            sensitivity=table, margin_sensitivity=table, drivers=drivers,
+            implied_average_growth_at_lower_wacc={0.01: 0.02, 0.02: 0.01},
+            sensitivity=table, margin_sensitivity=table, drivers=drivers, valuation_lag=0.5,
         )
     }
     monkeypatch.setattr(entry, "run", lambda **kwargs: (fake, []))

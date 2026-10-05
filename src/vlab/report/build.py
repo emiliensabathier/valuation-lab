@@ -84,13 +84,13 @@ def _year_range(fiscal_years: tuple[str, ...]) -> str:
 def _drivers_table(results) -> str:
     """The normalized inputs behind every valuation, not only its conclusion.
 
-    A reader who cannot see revenue, margin, tax rate, all three of capex, D&A and the change
-    in working capital (each as a ratio to revenue), and net debt -- plus the fiscal years they
-    were normalized over -- has no way to check a single figure in the summary table above --
-    only to trust it. Free cash flow is the plain sum of these ratios applied to revenue and
-    EBIT: ``EBIT x (1 - tax) + D&A + capex + change in working capital`` (see ``dcf.py``);
-    capex and the working-capital ratio are negative here exactly when they consume cash, so a
-    reader can reproduce a value per share from this row alone.
+    A reader who cannot see revenue, margin, tax rate, the capex, D&A, lease-payment and
+    working-capital ratios, and net debt -- plus the fiscal years they were normalized over --
+    has no way to check a single figure in the summary table, only to trust it. Free cash flow
+    is the plain sum of these ratios applied to revenue and EBIT:
+    ``EBIT x (1 - tax) + D&A + capex + lease payments + change in working capital`` (see
+    ``dcf.py``); the cash-consuming ratios are negative here, so a reader can reproduce a value
+    per share from this row alone.
     """
     rows = []
     for result in results.values():
@@ -104,13 +104,15 @@ def _drivers_table(results) -> str:
             _pct(drivers.tax_rate),
             _pct(drivers.capex_ratio),
             _pct(drivers.da_ratio),
+            _pct(drivers.lease_ratio),
             _pct(drivers.nwc_ratio),
             f"{_bn(drivers.net_debt)} {currency}",
         ])
     return _table(
         ["Company", "Fiscal years", "Revenue (latest)", "EBIT margin (normalized)",
          "Tax rate (normalized)", "Capex / revenue (normalized)",
-         "D&A / revenue (normalized)", "Change in WC / revenue (normalized)",
+         "D&A / revenue (normalized)", "Lease payments / revenue (normalized)",
+         "Change in WC / revenue (normalized)",
          "Net debt (latest)"],
         rows,
     )
@@ -159,18 +161,85 @@ def _kering_collapse_note(results) -> str:
         return ""
     discount = 1.0 - kering.value_per_share / kering.price
     drivers = kering.drivers
-    return (
+    parts = [
         '<div class="caveat"><strong>Why Kering values so far below its price.</strong> '
         f"The model's {kering.value_per_share:.2f} {kering.trading_currency} sits about "
         f"{discount * 100:.0f}% below its {kering.price:.2f} {kering.trading_currency} market "
-        "price. That is a real consequence of the method, not a defect in it: over the "
-        f"reported window ({_year_range(drivers.fiscal_years)}) Kering's EBIT margin fell "
-        "from the mid-20s to single digits and revenue turned sharply negative. Normalizing "
-        f"both as medians over that same window gives an EBIT margin of "
-        f"{_pct(drivers.ebit_margin)} and a revenue growth of {_pct(drivers.revenue_growth)} "
-        "— the model's honest reading of a business still mid-collapse, projected forward "
-        "from its trough rather than from the scale it held before the decline. A median "
-        "normalization is only as representative as the window it is taken over.</div>"
+        f"price. Normalized over {_year_range(drivers.fiscal_years)}, Kering is valued at an "
+        f"EBIT margin of {_pct(drivers.ebit_margin)} and a starting revenue growth of "
+        f"{_pct(drivers.revenue_growth)}, both medians."
+    ]
+    if drivers.ebit_margins:
+        latest = drivers.ebit_margins[-1]
+        side = "above" if drivers.ebit_margin > latest else "below"
+        parts.append(
+            f" The yearly EBIT margin ran {_series(drivers.ebit_margins)}, so the median sits "
+            f"{side} the latest year's {_pct(latest)}."
+        )
+    if drivers.revenue_growths:
+        parts.append(f" Yearly revenue growth ran {_series(drivers.revenue_growths)}.")
+    if drivers.capex_ratios:
+        parts.append(
+            f" Capex over revenue ran {_series(drivers.capex_ratios)}; the median of "
+            f"{_pct(drivers.capex_ratio)} is taken over years that include property "
+            "purchases, not only store and replacement spending."
+        )
+    parts.append(
+        " The modelled value is what those medians are worth if they persist; the market "
+        "price is a bet that they do not.</div>"
+    )
+    return "".join(parts)
+
+
+def _series(values: tuple[float, ...]) -> str:
+    return ", ".join(_pct(value) for value in values)
+
+
+def _lower_wacc_table(results) -> str:
+    """The implied five-year average growth re-solved at a discount rate one and two points lower.
+
+    The computed WACCs rest on raw betas and a 5% equity risk premium; a reader who thinks
+    either is too high reads the implied growth at a lower rate here, rather than trusting the
+    single discount rate the conclusion would otherwise lean on.
+    """
+    steps = sorted(
+        {
+            step
+            for result in results.values()
+            for step in result.implied_average_growth_at_lower_wacc
+        }
+    )
+    rows = [
+        [result.name, _pct(result.wacc), _pct(result.implied_average_growth)]
+        + [
+            _pct(result.implied_average_growth_at_lower_wacc[step])
+            if step in result.implied_average_growth_at_lower_wacc
+            else "—"
+            for step in steps
+        ]
+        for result in results.values()
+    ]
+    headers = ["Company", "WACC", "Implied growth, 5y average"] + [
+        f"At WACC − {step * 100:.0f}pt" for step in steps
+    ]
+    return _table(headers, rows)
+
+
+def _bias_caveat() -> str:
+    """The ways the modelled value leans low, so the gap to price overstates itself."""
+    return (
+        '<div class="caveat"><strong>Read the gap with the model&#39;s biases.</strong> The '
+        "modelled value leans low on several counts, so the gap to price overstates what the "
+        "market pays for beyond this model: "
+        "working capital is projected as a share of the revenue <em>level</em>, not of its "
+        "change, so it drains cash every year even at zero growth; cash flows are discounted "
+        "at year-end, not mid-year; betas are raw regression betas, not shrunk toward one, "
+        "which raises the cost of equity of any beta above one, and they are priced at a "
+        f"{_pct(EQUITY_RISK_PREMIUM)} equity risk premium; median capex includes years of property "
+        "purchases, not only replacement spending; and four-year medians anchor margins to a "
+        "window that is a downturn for some houses. The table below re-solves the implied "
+        "growth at a lower discount rate. Read together, the market prices more growth than "
+        "this model credits &mdash; which is not the same as saying a share is mispriced.</div>"
     )
 
 
@@ -267,6 +336,12 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
         "<h2>Summary</h2>",
         _summary_table(results),
     ]
+    sections += [
+        _bias_caveat(),
+        '<p class="note">Implied five-year average growth re-solved at a lower discount '
+        "rate, everything else held:</p>",
+        _lower_wacc_table(results),
+    ]
     kering_note = _kering_collapse_note(results)
     if kering_note:
         sections.append(kering_note)
@@ -275,13 +350,17 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
     sections += [
         "<h2>Drivers</h2>",
         '<p class="note">What each valuation is actually built from. Revenue and net debt '
-        "are the latest reported fiscal year; EBIT margin, tax rate, and the capex, D&amp;A "
-        "and change-in-working-capital ratios are medians across the fiscal years listed. "
+        "are the latest reported fiscal year; EBIT margin, tax rate, and the capex, D&amp;A, "
+        "lease-payment and change-in-working-capital ratios are medians across the fiscal "
+        "years listed. "
         "Revenue growth is normalized the same way and shown in the Summary table above, not "
-        "repeated here. Capex and the change-in-working-capital ratio are negative exactly "
-        "when they consume cash; D&amp;A is positive, added back as a non-cash expense. Free "
-        "cash flow is the plain sum: EBIT &times; (1 &minus; tax) + D&amp;A + capex + change "
-        "in working capital.</p>",
+        "repeated here. Capex, lease payments and the change in working capital are negative "
+        "exactly when they consume cash; D&amp;A is positive, added back as a non-cash "
+        "expense. Free cash flow is the plain sum: EBIT &times; (1 &minus; tax) + D&amp;A + "
+        "capex + lease payments + change in working capital. Leases are treated pre-IFRS 16: "
+        "the lease payment (last year's current lease liability plus after-tax lease "
+        "interest) is charged in free cash flow, and lease liabilities are excluded from net "
+        "debt and from the WACC debt weight.</p>",
         _drivers_table(results),
         "<h2>WACC bridge</h2>",
         '<p class="note">The cost of equity and the cost of debt behind the WACC column in '
@@ -308,6 +387,13 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
         "sensitivity grid above shows what they are worth. Betas are recomputed from five "
         "years of weekly returns against the Euro Stoxx 50 rather than taken from a data "
         "provider's undocumented field.</p>",
+        '<p class="note">Cash flows are dated from the latest fiscal year-end and rolled '
+        "forward to the price date, so the first one is discounted over less than a year: "
+        + "; ".join(
+            f"{html_escape.escape(result.name)} {result.valuation_lag:.2f} years"
+            for result in results.values()
+        )
+        + ".</p>",
     ]
 
     body = "\n".join(sections)

@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 
 from vlab.data.loader import Statements
-from vlab.errors import ValuationError
+from vlab.errors import DataError, ValuationError
 from vlab.fundamentals import Drivers
 from vlab.wacc import EQUITY_RISK_PREMIUM, RISK_FREE, compute_wacc, levered_beta
 
@@ -50,12 +50,18 @@ def test_the_stated_assumptions_are_the_ones_the_spec_fixed() -> None:
     assert EQUITY_RISK_PREMIUM == 0.05
 
 
-def _wacc_statements(interest: float = 100.0, debt: float = 2000.0) -> Statements:
+def _wacc_statements(
+    interest: float = 100.0, debt: float = 2000.0, leases: float = 0.0
+) -> Statements:
     periods = pd.DatetimeIndex(["2025-12-31", "2024-12-31"])
     return Statements(
         income=pd.DataFrame([[interest, interest]], index=["Interest Expense"], columns=periods),
         cashflow=pd.DataFrame(),
-        balance=pd.DataFrame([[debt, debt]], index=["Total Debt"], columns=periods),
+        balance=pd.DataFrame(
+            [[debt, debt], [leases, leases]],
+            index=["Total Debt", "Capital Lease Obligations"],
+            columns=periods,
+        ),
         info={},
     )
 
@@ -115,4 +121,28 @@ def test_a_negative_implied_cost_of_debt_raises() -> None:
     with pytest.raises(ValuationError, match="negative cost of debt"):
         compute_wacc(
             _wacc_statements(interest=-100.0), "TEST", _wacc_drivers(), 8000.0, market, market
+        )
+
+
+def test_lease_liabilities_leave_the_debt_weight_but_not_the_rate() -> None:
+    # Leases are paid through the cash flow (see Drivers.lease_ratio), so counting them as
+    # debt in the weights too would count them twice. Reported interest includes lease
+    # interest; spread pro rata it is the same rate on both, 100 / 2000 = 5%.
+    market = _market()
+
+    result = compute_wacc(
+        _wacc_statements(leases=500.0), "TEST", _wacc_drivers(), 8500.0, market, market
+    )
+
+    assert result.cost_of_debt == pytest.approx(0.05)
+    assert result.debt_weight == pytest.approx(1500.0 / 10000.0)
+    assert result.equity_weight == pytest.approx(0.85)
+
+
+def test_leases_larger_than_total_debt_raise() -> None:
+    market = _market()
+
+    with pytest.raises(DataError, match="lease"):
+        compute_wacc(
+            _wacc_statements(leases=2500.0), "TEST", _wacc_drivers(), 8000.0, market, market
         )

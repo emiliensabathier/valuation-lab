@@ -15,7 +15,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 # looser but still meaningful bound: a real methodology change moves it by percent.
 TOLERANCE_EXACT = 1e-9
 TOLERANCE_SOLVED = 1e-6
-SOLVED_FIELDS = {"implied_growth"}
+SOLVED_FIELDS = {"implied_growth", "implied_average_growth"}
 
 
 @pytest.fixture(scope="module")
@@ -48,6 +48,7 @@ def recomputed(raw_results: dict[str, CompanyResult]) -> dict[str, dict[str, flo
             for field in (
                 "trading_currency", "price", "value_per_share", "implied_growth",
                 "normalized_growth", "wacc", "beta", "terminal_share", "exit_multiple",
+                "implied_average_growth", "valuation_lag",
             )
         }
         for name, result in raw_results.items()
@@ -153,3 +154,15 @@ def test_the_sensitivity_grids_match_the_frozen_fixture(
         _assert_grid_matches_fixture(
             result.margin_sensitivity, expected[name]["margin_sensitivity"]
         )
+
+
+def test_the_implied_growth_at_a_lower_wacc_matches_the_frozen_fixture(
+    raw_results: dict[str, CompanyResult], expected: dict[str, dict[str, float]]
+) -> None:
+    # The report's answer to "what if the discount rate is too high" is a published number
+    # too; a change that moved it would otherwise reach a reader unchecked.
+    for name, result in raw_results.items():
+        frozen = expected[name]["implied_average_growth_at_lower_wacc"]
+        assert {str(step) for step in result.implied_average_growth_at_lower_wacc} == set(frozen)
+        for step, growth in result.implied_average_growth_at_lower_wacc.items():
+            assert growth == pytest.approx(frozen[str(step)], rel=TOLERANCE_SOLVED), (name, step)

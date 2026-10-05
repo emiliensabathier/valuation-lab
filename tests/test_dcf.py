@@ -132,3 +132,35 @@ def test_assumptions_from_maps_fields_correctly_with_distinct_values() -> None:
     assert assumptions.terminal_growth == 0.03
     # Default
     assert assumptions.years == 5
+
+
+def test_new_leases_reduce_the_flow_like_capex() -> None:
+    # lease_ratio arrives negative, like capex: new right-of-use additions consume cash.
+    flows = free_cash_flows(_drivers(lease_ratio=-0.04), _assumptions(terminal_growth=0.0))
+
+    assert flows[0] == pytest.approx(150.0 - 40.0)
+
+
+def test_a_valuation_lag_rolls_the_enterprise_value_forward_to_the_price_date() -> None:
+    # Cash flows are dated from the fiscal year-end; the price is observed later. Moving the
+    # valuation date forward by a fraction of a year brings every flow that much closer.
+    base = value(_drivers(), _assumptions())
+    rolled = value(_drivers(), _assumptions(valuation_lag=0.5))
+
+    assert rolled.enterprise_value == pytest.approx(base.enterprise_value * 1.10**0.5)
+    assert rolled.pv_terminal == pytest.approx(base.pv_terminal * 1.10**0.5)
+    assert rolled.terminal_share == pytest.approx(base.terminal_share)
+
+
+def test_a_negative_or_year_long_valuation_lag_raises() -> None:
+    with pytest.raises(ValuationError, match="lag"):
+        value(_drivers(), _assumptions(valuation_lag=-0.1))
+
+    with pytest.raises(ValuationError, match="lag"):
+        value(_drivers(), _assumptions(valuation_lag=1.0))
+
+
+def test_assumptions_from_carries_the_valuation_lag() -> None:
+    assumptions = assumptions_from(_drivers(), wacc=0.10, terminal_growth=0.02, valuation_lag=0.4)
+
+    assert assumptions.valuation_lag == 0.4

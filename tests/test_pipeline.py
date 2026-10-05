@@ -7,9 +7,16 @@ import pytest
 
 from vlab.data.loader import Statements
 from vlab.dcf import assumptions_from, value
-from vlab.errors import DataError
+from vlab.errors import DataError, ValuationError
 from vlab.fundamentals import drivers_from
-from vlab.pipeline import TERMINAL_GROWTH, convert_to_trading_currency, run
+from vlab.pipeline import (
+    LOWER_WACC_STEPS,
+    TERMINAL_GROWTH,
+    convert_to_trading_currency,
+    run,
+    valuation_lag,
+)
+from vlab.reverse import implied_average_growth
 from vlab.sensitivity import default_wacc_terminal_grid
 from vlab.universe import MARKET_INDEX, Company
 from vlab.wacc import compute_wacc, levered_beta
@@ -97,9 +104,14 @@ def _pipeline_statements(ticker: str) -> Statements:
             [revenue[0] * 0.05] * 3,
             [revenue[0] * 0.01] * 3,
             [shares] * 3,
+            # No leases: the synthetic peers' share counts were tuned without them, and the
+            # lease arithmetic has its own tests in test_fundamentals.py and test_dcf.py.
+            [0.0] * 3,
+            [0.0] * 3,
         ],
         index=["Total Debt", "Cash Cash Equivalents And Short Term Investments",
-               "Minority Interest", "Ordinary Shares Number"],
+               "Minority Interest", "Ordinary Shares Number",
+               "Capital Lease Obligations", "Current Capital Lease Obligation"],
         columns=periods,
     )
     return Statements(income, cashflow, balance, {"sharesOutstanding": shares})
@@ -135,7 +147,9 @@ def _fake_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.Da
     # so hash(ticker) is stable within one test call but not reproducible across separate
     # pytest invocations — this fixture needs the same seed every run, not just every call.
     n = 60
-    dates = pd.bdate_range("2023-01-01", periods=n, freq="W-FRI")
+    # The series ends on the synthetic fiscal year-end, so the valuation lag is zero and the
+    # tests below can recompute a value without rolling it forward. The lag has its own test.
+    dates = pd.date_range(end="2025-12-31", periods=n, freq="7D")
     market_returns = np.random.default_rng(1234).normal(0.0, 0.02, n)
     data = {}
     for ticker in tickers:
@@ -402,3 +416,55 @@ def test_a_non_overlapping_fx_history_for_the_beta_raises_rather_than_falling_ba
     richemont_failure = next(f for f in failures if f.name == "Richemont")
     assert "EURCHF=X" in richemont_failure.reason
     assert "overlap" in richemont_failure.reason.lower()
+
+
+def test_the_valuation_lag_is_the_time_from_the_fiscal_year_end_to_the_price_date() -> None:
+    lag = valuation_lag("2025-12-31", pd.Timestamp("2026-08-07"))
+
+    assert lag == pytest.approx(219 / 365.25)
+
+
+def test_a_price_dated_before_the_fiscal_year_end_raises() -> None:
+    with pytest.raises(ValuationError, match="before"):
+        valuation_lag("2025-12-31", pd.Timestamp("2025-06-30"))
+
+
+def test_run_rolls_each_valuation_forward_to_its_price_date(tmp_path: Path) -> None:
+    def _later_price_fetcher(tickers: list[str], period: str, interval: str) -> pd.DataFrame:
+        frame = _fake_price_fetcher(tickers, period, interval)
+        return frame.set_index(frame.index + pd.Timedelta(days=146))
+
+    results, failures = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_fake_statement_fetcher,
+        price_fetcher=_later_price_fetcher,
+    )
+    assert failures == []
+
+    lvmh = results["LVMH"]
+    assert lvmh.valuation_lag == pytest.approx(146 / 365.25)
+    assumptions = assumptions_from(
+        lvmh.drivers, lvmh.wacc, TERMINAL_GROWTH, valuation_lag=146 / 365.25
+    )
+    assert lvmh.value_per_share == pytest.approx(
+        value(lvmh.drivers, assumptions).value_per_share, rel=1e-12
+    )
+
+
+def test_run_reports_the_implied_growth_at_lower_discount_rates(tmp_path: Path) -> None:
+    # The headline gap between implied and delivered growth is conditional on the WACC; the
+    # same price restated at a lower discount rate is what lets a reader see by how much.
+    results, _failures = run(
+        cache_dir=tmp_path,
+        statement_fetcher=_fake_statement_fetcher,
+        price_fetcher=_fake_price_fetcher,
+    )
+
+    lvmh = results["LVMH"]
+    assert set(lvmh.implied_average_growth_at_lower_wacc) == set(LOWER_WACC_STEPS)
+    for step, implied in lvmh.implied_average_growth_at_lower_wacc.items():
+        assumptions = assumptions_from(lvmh.drivers, lvmh.wacc - step, TERMINAL_GROWTH)
+        assert implied == pytest.approx(
+            implied_average_growth(lvmh.drivers, assumptions, lvmh.price), rel=1e-6
+        )
+        assert implied < lvmh.implied_average_growth

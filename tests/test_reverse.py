@@ -5,7 +5,7 @@ import pytest
 from vlab.dcf import Assumptions, value
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
-from vlab.reverse import implied_revenue_growth, implied_terminal_growth
+from vlab.reverse import implied_revenue_growth
 
 
 def _drivers() -> Drivers:
@@ -33,16 +33,6 @@ def test_the_reverse_dcf_recovers_the_growth_the_forward_dcf_was_given(growth: f
     recovered = implied_revenue_growth(drivers, _assumptions(), forward.value_per_share)
 
     assert recovered == pytest.approx(growth, abs=1e-6)
-
-
-@pytest.mark.parametrize("terminal", [0.0, 0.015, 0.03, 0.04])
-def test_the_reverse_dcf_recovers_the_terminal_growth_too(terminal: float) -> None:
-    drivers = _drivers()
-    forward = value(drivers, _assumptions(terminal_growth=terminal))
-
-    recovered = implied_terminal_growth(drivers, _assumptions(), forward.value_per_share)
-
-    assert recovered == pytest.approx(terminal, abs=1e-6)
 
 
 def test_a_price_beyond_the_bracket_raises_rather_than_clamping() -> None:

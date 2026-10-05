@@ -30,7 +30,6 @@ from vlab.fundamentals import Drivers
 # companies for being 25% at the front of a path that averages half of it, which is a limit
 # on the arithmetic rather than on the plausibility.
 GROWTH_BRACKET = (-0.20, 0.50)
-TERMINAL_BRACKET = (-0.01, 0.05)
 
 TOLERANCE = 1e-10
 
@@ -69,8 +68,3 @@ def implied_average_growth(drivers: Drivers, assumptions: Assumptions, price: fl
     first_year = implied_revenue_growth(drivers, assumptions, price)
     path = growth_path(replace(assumptions, revenue_growth=first_year))
     return sum(path) / len(path)
-
-
-def implied_terminal_growth(drivers: Drivers, assumptions: Assumptions, price: float) -> float:
-    """The perpetual growth rate the market price implies, all else held normal."""
-    return _solve("terminal_growth", TERMINAL_BRACKET, drivers, assumptions, price)

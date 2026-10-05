@@ -1,6 +1,6 @@
 """Tests for the self-contained HTML report."""
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,7 @@ import pytest
 
 from vlab.fundamentals import Drivers
 from vlab.report.build import build_report
-from vlab.report.charts import figure_to_svg, implied_growth_chart
+from vlab.report.charts import figure_to_svg, implied_growth_chart, implied_growth_figure
 
 
 @dataclass(frozen=True)
@@ -33,13 +33,17 @@ class _Result:
     sensitivity: pd.DataFrame
     margin_sensitivity: pd.DataFrame
     drivers: Drivers
+    implied_average_growth_at_lower_wacc: dict[float, float] = field(
+        default_factory=lambda: {0.01: 0.0123, 0.02: 0.0045}
+    )
+    valuation_lag: float = 0.5
 
 
 def _drivers(revenue_growth: float, ebit_margin: float, net_debt: float) -> Drivers:
     return Drivers(
         revenue=1_000_000_000.0, revenue_growth=revenue_growth, ebit_margin=ebit_margin,
         tax_rate=0.27, capex_ratio=-0.05, da_ratio=0.06, nwc_ratio=-0.01,
-        net_debt=net_debt, minority_interest=0.0, shares=10_000_000.0,
+        net_debt=net_debt, minority_interest=0.0, shares=10_000_000.0, lease_ratio=-0.0432,
         fiscal_years=("2022-12-31", "2023-12-31", "2024-12-31", "2025-12-31"),
     )
 
@@ -201,21 +205,83 @@ def test_a_company_with_no_fiscal_years_recorded_shows_not_available() -> None:
     assert "n/a" in html[lvmh_start:]
 
 
-def test_kerings_valuation_gap_is_explained_when_kering_is_present() -> None:
-    results = _results()
-    kering_drivers = _drivers(-0.13, 0.18, 2_000_000_000.0)
+def _with_kering(results: dict[str, _Result]) -> dict[str, _Result]:
+    kering_drivers = replace(
+        _drivers(-0.13, 0.18, 2_000_000_000.0),
+        ebit_margins=(0.261, 0.241, 0.130, 0.073),
+        revenue_growths=(-0.04, -0.12, -0.13),
+        capex_ratios=(-0.053, -0.133, -0.196, -0.057),
+    )
     results["Kering"] = _Result(
         "Kering", "KER.PA", "EUR", "EUR", 289.75, 36.54, 0.0798, 0.0499, -0.13, 0.0731, 1.36,
         cost_of_equity=0.075, cost_of_debt=0.0343, equity_weight=0.662, debt_weight=0.338,
         terminal_share=0.71, exit_multiple=14.5, sensitivity=results["LVMH"].sensitivity,
         margin_sensitivity=results["LVMH"].margin_sensitivity, drivers=kering_drivers,
     )
+    return results
 
-    html = build_report(results, generated_on="2026-08-06")
+
+def test_kerings_valuation_gap_is_explained_when_kering_is_present() -> None:
+    html = build_report(_with_kering(_results()), generated_on="2026-08-06")
 
     assert "Why Kering values so far below its price" in html
     # 1 - 36.54 / 289.75 = 0.8739..., rounded to the nearest percent.
     assert "87%" in html
+
+
+def test_the_kering_note_is_built_from_the_yearly_figures_not_from_prose() -> None:
+    html = build_report(_with_kering(_results()), generated_on="2026-08-06")
+    note = html[html.index("Why Kering") : html.index("</div>", html.index("Why Kering"))]
+
+    # The margin path, first and last year, and the median the model actually uses.
+    assert "26.10%" in note and "7.30%" in note and "18.00%" in note
+    # The median margin sits above the latest year: the note must say so, not call it a trough.
+    assert "above" in note
+    assert "trough" not in note
+    # The capex range the median is taken over.
+    assert "-5.30%" in note and "-19.60%" in note
+
+
+def test_the_kering_note_says_below_when_the_median_margin_is_under_the_latest() -> None:
+    results = _with_kering(_results())
+    kering = results["Kering"]
+    rising = replace(kering.drivers, ebit_margins=(0.10, 0.12, 0.14, 0.25))
+    results["Kering"] = replace(kering, drivers=rising)
+
+    html = build_report(results, generated_on="2026-08-06")
+    note = html[html.index("Why Kering") : html.index("</div>", html.index("Why Kering"))]
+
+    assert "below" in note.split("market price", 1)[1]
+
+
+def test_implied_growth_at_a_lower_discount_rate_is_shown() -> None:
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "WACC − 1pt" in html and "WACC − 2pt" in html
+    assert "1.23%" in html and "0.45%" in html
+
+
+def test_the_report_lists_the_models_downward_biases() -> None:
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    lowered = html.lower()
+    assert "leans low" in lowered
+    for bias in ("working capital", "year-end", "beta", "capex"):
+        assert bias in lowered, bias
+
+
+def test_the_drivers_table_shows_the_lease_payment_ratio() -> None:
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "Lease payments / revenue" in html
+    assert "-4.32%" in html
+
+
+def test_the_roll_forward_to_the_price_date_is_stated() -> None:
+    html = build_report(_results(), generated_on="2026-08-06")
+
+    assert "rolled forward" in html.lower()
+    assert "0.50 years" in html
 
 
 def test_no_kering_note_when_kering_is_not_in_the_results() -> None:
@@ -301,3 +367,12 @@ def test_a_nan_cell_in_the_sensitivity_grid_is_shown_as_a_dash_not_a_number() ->
     hermes_start = html.index("<h3>Hermes</h3>")
     lvmh_block = html[lvmh_start:hermes_start]
     assert "—" in lvmh_block
+
+
+def test_the_implied_growth_chart_reads_in_percent_and_names_the_average() -> None:
+    fig = implied_growth_figure({"LVMH": 0.041}, {"LVMH": 0.062})
+    axes = fig.axes[0]
+
+    labels = [text.get_text() for text in axes.get_legend().get_texts()]
+    assert any("5-year average" in label for label in labels)
+    assert axes.yaxis.get_major_formatter()(0.05, 0).endswith("%")

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import pandas as pd
@@ -25,6 +25,15 @@ from vlab.wacc import compute_wacc
 
 TERMINAL_GROWTH = 0.02
 
+# The implied growth is re-solved at the computed WACC lowered by these steps. The model's
+# discount rates come from raw five-year betas of 1.2-1.4 and a 5% equity risk premium, which
+# sits at the high end of what an analyst would use for these houses; restating the same price
+# at a lower rate shows how much of the gap between implied and delivered growth is the
+# discount rate rather than the market's view.
+LOWER_WACC_STEPS = (0.01, 0.02)
+
+DAYS_PER_YEAR = 365.25
+
 
 @dataclass(frozen=True)
 class CompanyResult:
@@ -34,6 +43,12 @@ class CompanyResult:
     ``reporting_currency`` -- carried through so the report can show a reader what the model
     is actually pricing (revenue, margin, tax rate, capex ratio, net debt, fiscal years), not
     only what it concludes.
+
+    ``valuation_lag`` is the time in years from the latest fiscal year-end to the price date;
+    every value on this record is discounted to the price date (see ``dcf.Assumptions``).
+
+    ``implied_average_growth_at_lower_wacc`` maps each step in ``LOWER_WACC_STEPS`` to the
+    5-year average implied growth re-solved at ``wacc`` minus that step.
 
     ``cost_of_equity``, ``cost_of_debt``, ``equity_weight`` and ``debt_weight`` are carried
     through from ``wacc.Wacc`` so the report can publish the WACC bridge, not only the blended
@@ -48,6 +63,7 @@ class CompanyResult:
     value_per_share: float
     implied_growth: float
     implied_average_growth: float
+    implied_average_growth_at_lower_wacc: dict[float, float]
     normalized_growth: float
     wacc: float
     beta: float
@@ -60,6 +76,7 @@ class CompanyResult:
     sensitivity: pd.DataFrame
     margin_sensitivity: pd.DataFrame
     drivers: Drivers
+    valuation_lag: float
 
 
 @dataclass(frozen=True)
@@ -74,6 +91,23 @@ class CompanyFailure:
     name: str
     ticker: str
     reason: str
+
+
+def valuation_lag(fiscal_year_end: str, price_date: pd.Timestamp) -> float:
+    """Years from the latest fiscal year-end to the date the price was observed.
+
+    The cash flows are projected from the fiscal year-end, but the price they are compared
+    with is months later. Discounting to the year-end would understate every value by about
+    (1 + WACC) to the power of this lag -- 4-5% for a price seven months after a December
+    year-end.
+    """
+    lag = (price_date - pd.Timestamp(fiscal_year_end)).days / DAYS_PER_YEAR
+    if lag < 0.0:
+        raise ValuationError(
+            f"the price is dated {price_date.date()}, before the fiscal year-end "
+            f"{fiscal_year_end} the cash flows start from"
+        )
+    return lag
 
 
 def _fx_pair(company: Company) -> str:
@@ -185,6 +219,7 @@ def _value_company(
     drivers = drivers_from(statements, company.ticker)
 
     price = float(prices[company.ticker].iloc[-1])
+    lag = valuation_lag(drivers.fiscal_years[-1], prices.index[-1])
     # The balance-sheet count (drivers.shares, "Ordinary Shares Number"), not
     # info["sharesOutstanding"]: fundamentals.py already divides equity value by the
     # balance-sheet count, and the two sources can disagree by several percent (Richemont:
@@ -214,7 +249,9 @@ def _value_company(
         statements, company.ticker, drivers, market_cap,
         stock_prices, market_prices,
     )
-    assumptions = assumptions_from(drivers, cost_of_capital.value, TERMINAL_GROWTH)
+    assumptions = assumptions_from(
+        drivers, cost_of_capital.value, TERMINAL_GROWTH, valuation_lag=lag
+    )
     valuation = value(drivers, assumptions)
 
     # The model works in the reporting currency; the price is quoted in the trading one. The
@@ -239,6 +276,12 @@ def _value_company(
         implied_average_growth=implied_average_growth(
             drivers, assumptions, price_in_reporting
         ),
+        implied_average_growth_at_lower_wacc={
+            step: implied_average_growth(
+                drivers, replace(assumptions, wacc=assumptions.wacc - step), price_in_reporting
+            )
+            for step in LOWER_WACC_STEPS
+        },
         normalized_growth=drivers.revenue_growth,
         wacc=cost_of_capital.value,
         beta=cost_of_capital.beta,
@@ -251,6 +294,7 @@ def _value_company(
         sensitivity=sensitivity,
         margin_sensitivity=margin_sensitivity,
         drivers=drivers,
+        valuation_lag=lag,
     )
 
 

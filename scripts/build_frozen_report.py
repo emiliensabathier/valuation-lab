@@ -37,7 +37,7 @@ def main() -> None:
         # of which fetcher was passed. Pointing this at the real cache/ would risk serving a
         # fresh-enough live pull instead of the frozen fixture -- and, on a cache miss, would
         # overwrite that real cache with frozen data, making the next live `vlab` run silently
-        # serve stale 2026-08-06 numbers until the cache expired.
+        # serve stale frozen (CAPTURED) numbers until the cache expired.
         results, failures = run(
             cache_dir=Path(cache_dir),
             statement_fetcher=statement_fetcher,

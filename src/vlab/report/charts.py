@@ -17,6 +17,7 @@ matplotlib.use("Agg")
 # fixture without tripping on ids that changed for no reason connected to the data.
 matplotlib.rcParams["svg.hashsalt"] = "vlab-valuation-lab"
 from matplotlib.figure import Figure  # noqa: E402
+from matplotlib.ticker import PercentFormatter  # noqa: E402
 
 FIGSIZE = (9.0, 4.0)
 DPI = 110
@@ -54,12 +55,13 @@ def implied_growth_figure(implied: dict[str, float], normalized: dict[str, float
     fig = Figure(figsize=FIGSIZE, dpi=DPI)
     axes = fig.add_subplot(111)
     axes.bar([p - width / 2 for p in positions], [implied[n] for n in names], width,
-             label="Implied by the market price")
+             label="Implied by the market price (5-year average)")
     axes.bar([p + width / 2 for p in positions], [normalized[n] for n in names], width,
-             label="Normalized historical growth")
+             label="Normalized historical growth (median)")
     axes.set_xticks(list(positions))
     axes.set_xticklabels(names)
     axes.set_ylabel("Annual revenue growth")
+    axes.yaxis.set_major_formatter(PercentFormatter(xmax=1.0, decimals=0))
     axes.set_title("What the market prices in, against what the business has delivered")
     axes.axhline(0.0, linewidth=0.8, color="#444")
     axes.legend(frameon=False)

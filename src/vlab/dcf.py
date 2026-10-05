@@ -7,10 +7,16 @@ round-trip test in tests/test_reverse.py turns that from a claim into a check.
 
 Free cash flow to the firm, so that four companies with different leverage stay comparable:
 
-    FCFF = EBIT x (1 - tax) + D&A + capex + change in working capital
+    FCFF = EBIT x (1 - tax) + D&A + capex + lease payments + change in working capital
 
-The last two terms arrive negative when they consume cash, exactly as reported, so the sum is
-additive and there is no sign to flip.
+Capex, lease payments and the change in working capital arrive negative when they consume
+cash, so the sum is additive and there is no sign to flip. Lease payments are charged here
+because lease liabilities are kept out of net debt: see ``fundamentals.Drivers.lease_ratio``.
+
+Cash flows are dated from the latest fiscal year-end, but the share price is observed some
+months later. ``Assumptions.valuation_lag`` is that gap in years; every flow is discounted to
+the price date rather than to the balance-sheet date, which is the same as rolling the
+enterprise value forward at the WACC. Flows are still taken at year-end, not mid-year.
 """
 
 from __future__ import annotations
@@ -30,6 +36,7 @@ class Assumptions:
     terminal_growth: float
     wacc: float
     years: int = 5
+    valuation_lag: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -44,13 +51,16 @@ class Valuation:
     terminal_share: float
 
 
-def assumptions_from(drivers: Drivers, wacc: float, terminal_growth: float) -> Assumptions:
+def assumptions_from(
+    drivers: Drivers, wacc: float, terminal_growth: float, valuation_lag: float = 0.0
+) -> Assumptions:
     """Start from the company's own normalized history, then let the caller vary it."""
     return Assumptions(
         revenue_growth=drivers.revenue_growth,
         ebit_margin=drivers.ebit_margin,
         terminal_growth=terminal_growth,
         wacc=wacc,
+        valuation_lag=valuation_lag,
     )
 
 
@@ -100,6 +110,7 @@ def free_cash_flows(drivers: Drivers, assumptions: Assumptions) -> list[float]:
         ebit * (1.0 - drivers.tax_rate)
         + revenue * drivers.da_ratio
         + revenue * drivers.capex_ratio
+        + revenue * drivers.lease_ratio
         + revenue * drivers.nwc_ratio
         for revenue, ebit in _project(drivers, assumptions)
     ]
@@ -117,6 +128,11 @@ def _require_feasible(assumptions: Assumptions) -> None:
             f"WACC ({assumptions.wacc:.4f}) is at or below the terminal growth rate "
             f"({assumptions.terminal_growth:.4f}); the Gordon formula has no meaning there"
         )
+    if not 0.0 <= assumptions.valuation_lag < 1.0:
+        raise ValuationError(
+            f"valuation lag of {assumptions.valuation_lag:.3f} years: the price must be "
+            "observed after the latest fiscal year-end and within a year of it"
+        )
 
 
 def value(drivers: Drivers, assumptions: Assumptions) -> Valuation:
@@ -128,11 +144,13 @@ def value(drivers: Drivers, assumptions: Assumptions) -> Valuation:
     flows = free_cash_flows(drivers, assumptions)
     discount = 1.0 + assumptions.wacc
 
-    pv_explicit = sum(flow / discount ** (year + 1) for year, flow in enumerate(flows))
+    lag = assumptions.valuation_lag
+
+    pv_explicit = sum(flow / discount ** (year + 1 - lag) for year, flow in enumerate(flows))
 
     terminal_flow = flows[-1] * (1.0 + assumptions.terminal_growth)
     terminal_value = terminal_flow / (assumptions.wacc - assumptions.terminal_growth)
-    pv_terminal = terminal_value / discount ** assumptions.years
+    pv_terminal = terminal_value / discount ** (assumptions.years - lag)
 
     enterprise_value = pv_explicit + pv_terminal
     equity_value = enterprise_value - drivers.net_debt - drivers.minority_interest
@@ -158,7 +176,9 @@ def terminal_exit_multiple(drivers: Drivers, assumptions: Assumptions) -> float:
     _require_feasible(assumptions)
 
     val = value(drivers, assumptions)
-    undiscounted_terminal = val.pv_terminal * (1.0 + assumptions.wacc) ** assumptions.years
+    undiscounted_terminal = val.pv_terminal * (1.0 + assumptions.wacc) ** (
+        assumptions.years - assumptions.valuation_lag
+    )
 
     _final_revenue, final_ebit = _project(drivers, assumptions)[-1]
     if final_ebit <= 0.0:

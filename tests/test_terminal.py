@@ -95,3 +95,14 @@ def test_terminal_exit_multiple_derives_final_year_ebit_from_the_shared_projecti
     # Both go through the same function, not a second independently written formula.
     assert len(calls) == 2
     assert all(passed_drivers is drivers for passed_drivers, _ in calls)
+
+
+def test_the_exit_multiple_does_not_move_with_the_valuation_date() -> None:
+    # Rolling the valuation date forward changes what the terminal value is worth today, not
+    # the terminal value itself, so the multiple it implies must be unchanged.
+    base = terminal_exit_multiple(_drivers(), Assumptions(0.0, 0.20, 0.02, 0.10, 5))
+    rolled = terminal_exit_multiple(
+        _drivers(), Assumptions(0.0, 0.20, 0.02, 0.10, 5, valuation_lag=0.6)
+    )
+
+    assert rolled == pytest.approx(base)
