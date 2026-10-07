@@ -22,9 +22,16 @@ from vlab.errors import ValuationError
 class Drivers:
     """Normalized inputs to the valuation, in the reporting currency.
 
-    ``capex_ratio`` and ``nwc_ratio`` are negative when they consume cash, exactly as
-    reported. The free cash flow formula is additive as a result, so there is no sign to flip
-    and no opportunity to flip it wrongly.
+    ``capex_ratio`` is negative when it consumes cash, exactly as reported. The free cash flow
+    formula is additive as a result, so there is no sign to flip and no opportunity to flip it
+    wrongly.
+
+    ``nwc_intensity`` is operating working capital -- inventory plus trade receivables less
+    trade payables -- as a share of revenue, positive when the business ties cash up in it.
+    The model charges it on the *change* in revenue, so working capital costs cash only when
+    the business grows and releases it when the business shrinks. The cash-flow statement's
+    "Change In Working Capital" line is not used: as a share of the revenue level it drained
+    cash every year even at zero growth, terminal year included.
 
     ``lease_ratio`` is lease payments over revenue, negative like capex. Under IFRS 16 rent
     disappears from operating costs: the reported EBIT is struck before it, D&A carries the
@@ -57,7 +64,7 @@ class Drivers:
     tax_rate: float
     capex_ratio: float
     da_ratio: float
-    nwc_ratio: float
+    nwc_intensity: float
     net_debt: float
     minority_interest: float
     shares: float
@@ -148,7 +155,6 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
     capex = require(cashflow, "Capital Expenditure", ticker)
     disposals = require(cashflow, "Sale Of PPE", ticker)
     depreciation = require(cashflow, "Depreciation And Amortization", ticker)
-    working_capital = require(cashflow, "Change In Working Capital", ticker)
 
     debt = require(balance, "Total Debt", ticker)
     cash = require(balance, "Cash Cash Equivalents And Short Term Investments", ticker)
@@ -156,6 +162,9 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
     shares = require(balance, "Ordinary Shares Number", ticker)
     leases = require(balance, "Capital Lease Obligations", ticker)
     current_leases = require(balance, "Current Capital Lease Obligation", ticker)
+    inventory = require(balance, "Inventory", ticker)
+    receivables = require(balance, "Accounts Receivable", ticker)
+    payables = require(balance, "Accounts Payable", ticker)
 
     # Statements arrive most-recent-first; reversing puts them in chronological order so a
     # year-on-year growth rate means what its name says.
@@ -185,7 +194,7 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
         tax_rate=tax_rate,
         capex_ratio=_net_capex_ratio(capex, disposals, revenue, ticker),
         da_ratio=_median_ratio(depreciation, revenue),
-        nwc_ratio=_median_ratio(working_capital, revenue),
+        nwc_intensity=_median_ratio(inventory + receivables - payables, revenue),
         net_debt=float(debt.iloc[0] - leases.iloc[0] - cash.iloc[0]),
         minority_interest=float(minorities.iloc[0]),
         shares=float(shares.iloc[0]),

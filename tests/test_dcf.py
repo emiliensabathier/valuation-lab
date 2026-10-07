@@ -13,7 +13,7 @@ def _drivers(**overrides) -> Drivers:
         tax_rate=0.25,
         capex_ratio=0.0,
         da_ratio=0.0,
-        nwc_ratio=0.0,
+        nwc_intensity=0.0,
         net_debt=0.0,
         minority_interest=0.0,
         shares=100.0,
@@ -63,11 +63,38 @@ def test_growth_compounds_into_the_cash_flows_along_the_faded_path() -> None:
 
 
 def test_cash_consuming_ratios_reduce_the_flow_without_a_sign_flip() -> None:
-    # capex_ratio and nwc_ratio arrive negative, as reported. The formula is additive.
-    drivers = _drivers(capex_ratio=-0.05, da_ratio=0.03, nwc_ratio=-0.01)
+    # capex_ratio arrives negative, as reported. The formula is additive.
+    drivers = _drivers(capex_ratio=-0.05, da_ratio=0.03)
     flows = free_cash_flows(drivers, _assumptions())
 
-    assert flows[0] == pytest.approx(150.0 + 30.0 - 50.0 - 10.0)
+    assert flows[0] == pytest.approx(150.0 + 30.0 - 50.0)
+
+
+def test_working_capital_costs_nothing_when_revenue_does_not_grow() -> None:
+    # The old level-based charge drained cash every year even at zero growth.
+    flows = free_cash_flows(_drivers(nwc_intensity=0.25), _assumptions(terminal_growth=0.0))
+
+    assert flows == pytest.approx([150.0] * 5)
+
+
+def test_working_capital_is_charged_on_the_change_in_revenue() -> None:
+    # 1000 -> 1100: the extra 100 of revenue ties up 25 of working capital.
+    drivers = _drivers(nwc_intensity=0.25)
+    assumptions = _assumptions(revenue_growth=0.10, terminal_growth=0.10)
+
+    flows = free_cash_flows(drivers, assumptions)
+
+    assert flows[0] == pytest.approx(1100.0 * 0.20 * 0.75 - 25.0)
+    assert flows[1] == pytest.approx(1210.0 * 0.20 * 0.75 - 27.5)
+
+
+def test_shrinking_revenue_releases_working_capital() -> None:
+    drivers = _drivers(nwc_intensity=0.25)
+    assumptions = _assumptions(revenue_growth=-0.10, terminal_growth=-0.10)
+
+    flows = free_cash_flows(drivers, assumptions)
+
+    assert flows[0] == pytest.approx(900.0 * 0.20 * 0.75 + 25.0)
 
 
 def test_the_valuation_matches_the_closed_form_on_a_flat_perpetuity() -> None:

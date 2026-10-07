@@ -12,7 +12,7 @@ def test_the_cli_writes_a_report(tmp_path: Path, monkeypatch) -> None:
     table = pd.DataFrame([[100.0]], index=[0.09], columns=[0.02])
     drivers = Drivers(
         revenue=1_000_000_000.0, revenue_growth=0.062, ebit_margin=0.24, tax_rate=0.27,
-        capex_ratio=-0.05, da_ratio=0.06, nwc_ratio=-0.01, net_debt=5_000_000_000.0,
+        capex_ratio=-0.05, da_ratio=0.06, nwc_intensity=0.10, net_debt=5_000_000_000.0,
         minority_interest=0.0, shares=10_000_000.0,
         fiscal_years=("2022-12-31", "2023-12-31", "2024-12-31", "2025-12-31"),
     )

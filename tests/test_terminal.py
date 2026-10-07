@@ -9,7 +9,7 @@ from vlab.fundamentals import Drivers
 def _drivers() -> Drivers:
     return Drivers(
         revenue=1000.0, revenue_growth=0.0, ebit_margin=0.20, tax_rate=0.25,
-        capex_ratio=0.0, da_ratio=0.0, nwc_ratio=0.0,
+        capex_ratio=0.0, da_ratio=0.0, nwc_intensity=0.0,
         net_debt=0.0, minority_interest=0.0, shares=100.0,
     )
 
@@ -32,7 +32,7 @@ def test_a_more_generous_terminal_growth_implies_a_richer_exit() -> None:
 def test_with_growing_revenue_to_distinguish_year_5() -> None:
     drivers = Drivers(
         revenue=1000.0, revenue_growth=0.05, ebit_margin=0.20, tax_rate=0.25,
-        capex_ratio=0.0, da_ratio=0.0, nwc_ratio=0.0,
+        capex_ratio=0.0, da_ratio=0.0, nwc_intensity=0.0,
         net_debt=0.0, minority_interest=0.0, shares=100.0,
     )
     assumptions = Assumptions(0.05, 0.20, 0.02, 0.10, 5)
@@ -54,7 +54,7 @@ def test_with_growing_revenue_to_distinguish_year_5() -> None:
 def test_negative_ebit_margin_raises() -> None:
     drivers = Drivers(
         revenue=1000.0, revenue_growth=0.0, ebit_margin=-0.05, tax_rate=0.25,
-        capex_ratio=0.0, da_ratio=0.0, nwc_ratio=0.0,
+        capex_ratio=0.0, da_ratio=0.0, nwc_intensity=0.0,
         net_debt=0.0, minority_interest=0.0, shares=100.0,
     )
     assumptions = Assumptions(0.0, -0.05, 0.02, 0.10, 5)
@@ -75,7 +75,7 @@ def test_terminal_exit_multiple_derives_final_year_ebit_from_the_shared_projecti
     """
     drivers = Drivers(
         revenue=1000.0, revenue_growth=0.05, ebit_margin=0.20, tax_rate=0.25,
-        capex_ratio=0.0, da_ratio=0.0, nwc_ratio=0.0,
+        capex_ratio=0.0, da_ratio=0.0, nwc_intensity=0.0,
         net_debt=0.0, minority_interest=0.0, shares=100.0,
     )
     assumptions = Assumptions(0.05, 0.20, 0.02, 0.10, 5)

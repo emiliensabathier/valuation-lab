@@ -11,7 +11,7 @@ from vlab.reverse import implied_revenue_growth
 def _drivers() -> Drivers:
     return Drivers(
         revenue=1000.0, revenue_growth=0.05, ebit_margin=0.20, tax_rate=0.25,
-        capex_ratio=-0.04, da_ratio=0.05, nwc_ratio=-0.01,
+        capex_ratio=-0.04, da_ratio=0.05, nwc_intensity=0.10,
         net_debt=200.0, minority_interest=0.0, shares=100.0,
     )
 
@@ -56,7 +56,7 @@ def test_the_failure_message_reports_the_bracket_and_what_it_produced() -> None:
     assert "-0.2" in message and "0.5" in message
     # The bracket alone is not enough: a message could name the right bounds while
     # reporting the wrong values reached at each end. Pin those down too.
-    assert "10.62" in message and "54.90" in message
+    assert "11.69" in message and "56.48" in message
 
 
 def test_the_round_trip_holds_when_held_assumptions_differ_from_drivers_and_defaults() -> None:

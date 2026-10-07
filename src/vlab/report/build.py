@@ -87,10 +87,10 @@ def _drivers_table(results) -> str:
     A reader who cannot see revenue, margin, tax rate, the capex, D&A, lease-payment and
     working-capital ratios, and net debt -- plus the fiscal years they were normalized over --
     has no way to check a single figure in the summary table, only to trust it. Free cash flow
-    is the plain sum of these ratios applied to revenue and EBIT:
-    ``EBIT x (1 - tax) + D&A + capex + lease payments + change in working capital`` (see
-    ``dcf.py``); the cash-consuming ratios are negative here, so a reader can reproduce a value
-    per share from this row alone.
+    is built from these ratios applied to revenue and EBIT:
+    ``EBIT x (1 - tax) + D&A + capex + lease payments - WC intensity x change in revenue``
+    (see ``dcf.py``); capex and lease payments are negative here, so a reader can reproduce a
+    value per share from this row alone.
     """
     rows = []
     for result in results.values():
@@ -105,14 +105,14 @@ def _drivers_table(results) -> str:
             _pct(drivers.capex_ratio),
             _pct(drivers.da_ratio),
             _pct(drivers.lease_ratio),
-            _pct(drivers.nwc_ratio),
+            _pct(drivers.nwc_intensity),
             f"{_bn(drivers.net_debt)} {currency}",
         ])
     return _table(
         ["Company", "Fiscal years", "Revenue (latest)", "EBIT margin (normalized)",
          "Tax rate (normalized)", "Capex / revenue (normalized)",
          "D&A / revenue (normalized)", "Lease payments / revenue (normalized)",
-         "Change in WC / revenue (normalized)",
+         "Operating WC / revenue (normalized)",
          "Net debt (latest)"],
         rows,
     )
@@ -231,8 +231,7 @@ def _bias_caveat() -> str:
         '<div class="caveat"><strong>Read the gap with the model&#39;s biases.</strong> The '
         "modelled value leans low on several counts, so the gap to price overstates what the "
         "market pays for beyond this model: "
-        "working capital is projected as a share of the revenue <em>level</em>, not of its "
-        "change, so it drains cash every year even at zero growth; cash flows are discounted "
+        "cash flows are discounted "
         "at year-end, not mid-year; betas are raw regression betas, not shrunk toward one, "
         "which raises the cost of equity of any beta above one, and they are priced at a "
         f"{_pct(EQUITY_RISK_PREMIUM)} equity risk premium; capex, even net of disposals, still "
@@ -352,15 +351,17 @@ def build_report(results, failures=(), *, generated_on: str) -> str:
         "<h2>Drivers</h2>",
         '<p class="note">What each valuation is actually built from. Revenue and net debt '
         "are the latest reported fiscal year; EBIT margin, tax rate, and the D&amp;A, "
-        "lease-payment and change-in-working-capital ratios are medians across the fiscal "
-        "years listed. Capex is pooled over the same years net of property disposals, "
+        "lease-payment and operating working-capital ratios are medians across the fiscal "
+        "years listed. Operating working capital is inventory plus trade receivables less "
+        "trade payables; it is charged on the change in revenue, so it consumes cash only "
+        "while revenue grows. Capex is pooled over the same years net of property disposals, "
         "because property bought one year and sold back the next would otherwise be charged "
         "and never credited. "
         "Revenue growth is normalized the same way and shown in the Summary table above, not "
-        "repeated here. Capex, lease payments and the change in working capital are negative "
-        "exactly when they consume cash; D&amp;A is positive, added back as a non-cash "
-        "expense. Free cash flow is the plain sum: EBIT &times; (1 &minus; tax) + D&amp;A + "
-        "capex + lease payments + change in working capital. Leases are treated pre-IFRS 16: "
+        "repeated here. Capex and lease payments are negative exactly when they consume "
+        "cash; D&amp;A is positive, added back as a non-cash expense. Free cash flow is EBIT "
+        "&times; (1 &minus; tax) + D&amp;A + capex + lease payments &minus; working-capital "
+        "ratio &times; change in revenue. Leases are treated pre-IFRS 16: "
         "the lease payment (last year's current lease liability plus after-tax lease "
         "interest) is charged in free cash flow, and lease liabilities are excluded from net "
         "debt and from the WACC debt weight.</p>",

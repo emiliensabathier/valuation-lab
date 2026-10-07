@@ -42,10 +42,14 @@ def _statements(
             [500.0 + 10.0 * offset for offset in range(n)],
             [30.0 - 3.0 * offset for offset in range(n)],
             [6.0 - 0.5 * offset for offset in range(n)],
+            [0.20 * value for value in revenue],
+            [0.05 * value for value in revenue],
+            [0.10 * value for value in revenue],
         ],
         index=["Total Debt", "Cash Cash Equivalents And Short Term Investments",
                "Minority Interest", "Ordinary Shares Number",
-               "Capital Lease Obligations", "Current Capital Lease Obligation"],
+               "Capital Lease Obligations", "Current Capital Lease Obligation",
+               "Inventory", "Accounts Receivable", "Accounts Payable"],
         columns=periods,
     )
     return Statements(income, cashflow, balance, {"financialCurrency": "EUR"})
@@ -87,10 +91,12 @@ def test_fiscal_years_excludes_a_column_with_no_reported_revenue() -> None:
     )
     balance = pd.DataFrame(
         [[40.0, 45.0, 50.0, 55.0], [15.0, 17.0, 19.0, 21.0], [2.0, 3.0, 4.0, 5.0],
-         [500.0, 510.0, 520.0, 530.0], [30.0, 27.0, 24.0, 21.0], [6.0, 5.5, 5.0, 4.5]],
+         [500.0, 510.0, 520.0, 530.0], [30.0, 27.0, 24.0, 21.0], [6.0, 5.5, 5.0, 4.5],
+         [20.0, 18.0, 16.0, 14.0], [5.0, 4.5, 4.0, 3.5], [10.0, 9.0, 8.0, 7.0]],
         index=["Total Debt", "Cash Cash Equivalents And Short Term Investments",
                "Minority Interest", "Ordinary Shares Number",
-               "Capital Lease Obligations", "Current Capital Lease Obligation"],
+               "Capital Lease Obligations", "Current Capital Lease Obligation",
+               "Inventory", "Accounts Receivable", "Accounts Payable"],
         columns=periods,
     )
     statements = Statements(income, cashflow, balance, {"financialCurrency": "EUR"})
@@ -123,8 +129,36 @@ def test_cash_consuming_ratios_keep_their_reported_negative_sign() -> None:
     drivers = drivers_from(_statements([100.0, 90.0], [20.0, 18.0]), "TEST")
 
     assert drivers.capex_ratio == pytest.approx(-0.06)
-    assert drivers.nwc_ratio == pytest.approx(-0.01)
     assert drivers.da_ratio == pytest.approx(0.10)
+
+
+def test_working_capital_intensity_is_inventory_plus_receivables_less_payables() -> None:
+    # 20% + 5% - 10% of revenue in every year of the helper.
+    drivers = drivers_from(_statements([100.0, 90.0], [20.0, 18.0]), "TEST")
+
+    assert drivers.nwc_intensity == pytest.approx(0.15)
+
+
+def test_working_capital_intensity_is_the_median_of_the_yearly_ratios() -> None:
+    statements = _statements([100.0, 100.0, 100.0], [20.0, 20.0, 20.0])
+    statements.balance.loc["Inventory"] = [10.0, 40.0, 20.0]
+    statements.balance.loc["Accounts Receivable"] = [0.0, 0.0, 0.0]
+    statements.balance.loc["Accounts Payable"] = [0.0, 0.0, 0.0]
+
+    drivers = drivers_from(statements, "TEST")
+
+    assert drivers.nwc_intensity == pytest.approx(0.20)
+
+
+def test_a_missing_inventory_line_is_refused_rather_than_read_as_zero() -> None:
+    statements = _statements([100.0, 90.0], [20.0, 18.0])
+    statements = Statements(
+        statements.income, statements.cashflow, statements.balance.drop(index="Inventory"),
+        statements.info,
+    )
+
+    with pytest.raises(DataError):
+        drivers_from(statements, "TEST")
 
 
 def test_capex_is_pooled_over_the_window_net_of_property_disposals() -> None:

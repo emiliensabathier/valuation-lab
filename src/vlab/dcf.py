@@ -7,10 +7,12 @@ round-trip test in tests/test_reverse.py turns that from a claim into a check.
 
 Free cash flow to the firm, so that four companies with different leverage stay comparable:
 
-    FCFF = EBIT x (1 - tax) + D&A + capex + lease payments + change in working capital
+    FCFF = EBIT x (1 - tax) + D&A + capex + lease payments - NWC intensity x change in revenue
 
-Capex, lease payments and the change in working capital arrive negative when they consume
-cash, so the sum is additive and there is no sign to flip. Lease payments are charged here
+Capex and lease payments arrive negative when they consume cash, so the sum is additive and
+there is no sign to flip. Working capital is charged on the change in revenue, so it costs
+cash only while the business grows; in the terminal year it grows with revenue, which keeps
+the Gordon step consistent. Lease payments are charged here
 because lease liabilities are kept out of net debt: see ``fundamentals.Drivers.lease_ratio``.
 
 Cash flows are dated from the latest fiscal year-end, but the share price is observed some
@@ -106,13 +108,15 @@ def _project(drivers: Drivers, assumptions: Assumptions) -> list[tuple[float, fl
 
 def free_cash_flows(drivers: Drivers, assumptions: Assumptions) -> list[float]:
     """Project unlevered free cash flow over the explicit forecast period."""
+    projected = _project(drivers, assumptions)
+    previous = [drivers.revenue] + [revenue for revenue, _ebit in projected[:-1]]
     return [
         ebit * (1.0 - drivers.tax_rate)
         + revenue * drivers.da_ratio
         + revenue * drivers.capex_ratio
         + revenue * drivers.lease_ratio
-        + revenue * drivers.nwc_ratio
-        for revenue, ebit in _project(drivers, assumptions)
+        - (revenue - prior) * drivers.nwc_intensity
+        for (revenue, ebit), prior in zip(projected, previous, strict=True)
     ]
 
 

@@ -42,7 +42,7 @@ class _Result:
 def _drivers(revenue_growth: float, ebit_margin: float, net_debt: float) -> Drivers:
     return Drivers(
         revenue=1_000_000_000.0, revenue_growth=revenue_growth, ebit_margin=ebit_margin,
-        tax_rate=0.27, capex_ratio=-0.05, da_ratio=0.06, nwc_ratio=-0.01,
+        tax_rate=0.27, capex_ratio=-0.05, da_ratio=0.06, nwc_intensity=0.10,
         net_debt=net_debt, minority_interest=0.0, shares=10_000_000.0, lease_ratio=-0.0432,
         fiscal_years=("2022-12-31", "2023-12-31", "2024-12-31", "2025-12-31"),
     )
@@ -171,9 +171,9 @@ def test_the_drivers_table_shows_da_and_working_capital_ratios() -> None:
     html = build_report(_results(), generated_on="2026-08-06")
 
     assert "D&amp;A" in html
-    assert "Change in WC" in html
+    assert "Operating WC" in html
     assert "6.00%" in html  # the shared D&A ratio from _drivers()
-    assert "-1.00%" in html  # the shared change-in-working-capital ratio from _drivers()
+    assert "10.00%" in html  # the shared working-capital intensity from _drivers()
 
 
 def test_the_wacc_bridge_shows_the_cost_of_capital_components() -> None:

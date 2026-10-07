@@ -10,7 +10,7 @@ from vlab.sensitivity import default_margin_growth_grid, default_wacc_terminal_g
 def _drivers() -> Drivers:
     return Drivers(
         revenue=1000.0, revenue_growth=0.05, ebit_margin=0.20, tax_rate=0.25,
-        capex_ratio=-0.04, da_ratio=0.05, nwc_ratio=-0.01,
+        capex_ratio=-0.04, da_ratio=0.05, nwc_intensity=0.10,
         net_debt=200.0, minority_interest=0.0, shares=100.0,
     )
 

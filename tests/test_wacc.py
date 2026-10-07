@@ -69,7 +69,7 @@ def _wacc_statements(
 def _wacc_drivers(tax_rate: float = 0.25) -> Drivers:
     return Drivers(
         revenue=1000.0, revenue_growth=0.05, ebit_margin=0.20, tax_rate=tax_rate,
-        capex_ratio=-0.04, da_ratio=0.05, nwc_ratio=-0.01,
+        capex_ratio=-0.04, da_ratio=0.05, nwc_intensity=0.10,
         net_debt=0.0, minority_interest=0.0, shares=100.0,
     )
 

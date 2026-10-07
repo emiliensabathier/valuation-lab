@@ -74,10 +74,12 @@ _PRICE_BY_TICKER: dict[str, float] = {
 # price, re-solved because market_cap = price * shares feeds back into WACC's equity
 # weight, computed against the exact seeding _fake_price_fetcher below uses). Not real share
 # counts — internal consistency with that fetcher is all this fixture needs.
+# Kering's was scaled up when working capital moved onto the change in revenue: its falling
+# revenue now releases cash, which lifted every value in the bracket above the fixed price.
 _SHARES_BY_TICKER: dict[str, float] = {
     "MC.PA": 632.937667,
     "RMS.PA": 65.814553,
-    "KER.PA": 248.746382,
+    "KER.PA": 323.370297,
     "CFR.SW": 439.470275,
 }
 
@@ -110,10 +112,14 @@ def _pipeline_statements(ticker: str) -> Statements:
             # lease arithmetic has its own tests in test_fundamentals.py and test_dcf.py.
             [0.0] * 3,
             [0.0] * 3,
+            [r * 0.10 for r in revenue],
+            [0.0] * 3,
+            [r * 0.10 for r in revenue],
         ],
         index=["Total Debt", "Cash Cash Equivalents And Short Term Investments",
                "Minority Interest", "Ordinary Shares Number",
-               "Capital Lease Obligations", "Current Capital Lease Obligation"],
+               "Capital Lease Obligations", "Current Capital Lease Obligation",
+               "Inventory", "Accounts Receivable", "Accounts Payable"],
         columns=periods,
     )
     return Statements(income, cashflow, balance, {"sharesOutstanding": shares})

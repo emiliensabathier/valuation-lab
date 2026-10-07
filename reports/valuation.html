@@ -24,14 +24,14 @@ svg { max-width: 100%; height: auto; }
 <p class="note">Four European luxury houses, valued on unlevered free cash flow and then inverted against their own share prices. Generated on 2026-08-07.</p>
 <div class="caveat"><strong>What this does not say.</strong> A reverse discounted cash flow does not say a share is expensive. It says what the market assumes. Judging whether the implied growth is plausible for a given house is an analyst's work, not a model's.</div>
 <h2>Summary</h2>
-<table><thead><tr><th>Company</th><th>Price</th><th>Modelled value</th><th>Implied growth, year 1</th><th>Implied growth, 5y average</th><th>Normalized growth</th><th>WACC</th><th>Beta</th><th>Terminal share</th><th>Implied exit</th></tr></thead><tbody><tr><td>LVMH</td><td>481.45 EUR</td><td>265.96 EUR</td><td>24.43%</td><td>13.22%</td><td>-1.71%</td><td>8.95%</td><td>1.30</td><td>71.50%</td><td>7.4x</td></tr><tr><td>Hermes</td><td>1626.00 EUR</td><td>872.79 EUR</td><td>48.79%</td><td>25.40%</td><td>12.98%</td><td>9.23%</td><td>1.25</td><td>72.15%</td><td>8.6x</td></tr><tr><td>Kering</td><td>289.75 EUR</td><td>72.30 EUR</td><td>28.46%</td><td>15.23%</td><td>-13.03%</td><td>7.95%</td><td>1.36</td><td>73.67%</td><td>8.9x</td></tr><tr><td>Richemont</td><td>196.15 CHF</td><td>91.95 CHF</td><td>46.11%</td><td>24.05%</td><td>3.80%</td><td>9.42%</td><td>1.39</td><td>70.59%</td><td>8.5x</td></tr></tbody></table>
-<div class="caveat"><strong>Read the gap with the model&#39;s biases.</strong> The modelled value leans low on several counts, so the gap to price overstates what the market pays for beyond this model: working capital is projected as a share of the revenue <em>level</em>, not of its change, so it drains cash every year even at zero growth; cash flows are discounted at year-end, not mid-year; betas are raw regression betas, not shrunk toward one, which raises the cost of equity of any beta above one, and they are priced at a 5.00% equity risk premium; capex, even net of disposals, still carries property the houses kept, not only replacement spending; and four-year medians anchor margins to a window that is a downturn for some houses. The table below re-solves the implied growth at a lower discount rate. Read together, the market prices more growth than this model credits &mdash; which is not the same as saying a share is mispriced.</div>
+<table><thead><tr><th>Company</th><th>Price</th><th>Modelled value</th><th>Implied growth, year 1</th><th>Implied growth, 5y average</th><th>Normalized growth</th><th>WACC</th><th>Beta</th><th>Terminal share</th><th>Implied exit</th></tr></thead><tbody><tr><td>LVMH</td><td>481.45 EUR</td><td>328.82 EUR</td><td>16.29%</td><td>9.15%</td><td>-1.71%</td><td>8.95%</td><td>1.30</td><td>70.90%</td><td>9.0x</td></tr><tr><td>Hermes</td><td>1626.00 EUR</td><td>901.63 EUR</td><td>47.47%</td><td>24.73%</td><td>12.98%</td><td>9.23%</td><td>1.25</td><td>72.73%</td><td>9.0x</td></tr><tr><td>Kering</td><td>289.75 EUR</td><td>84.94 EUR</td><td>28.33%</td><td>15.16%</td><td>-13.03%</td><td>7.95%</td><td>1.36</td><td>70.68%</td><td>9.3x</td></tr><tr><td>Richemont</td><td>196.15 CHF</td><td>103.98 CHF</td><td>43.01%</td><td>22.50%</td><td>3.80%</td><td>9.42%</td><td>1.39</td><td>71.05%</td><td>9.9x</td></tr></tbody></table>
+<div class="caveat"><strong>Read the gap with the model&#39;s biases.</strong> The modelled value leans low on several counts, so the gap to price overstates what the market pays for beyond this model: cash flows are discounted at year-end, not mid-year; betas are raw regression betas, not shrunk toward one, which raises the cost of equity of any beta above one, and they are priced at a 5.00% equity risk premium; capex, even net of disposals, still carries property the houses kept, not only replacement spending; and four-year medians anchor margins to a window that is a downturn for some houses. The table below re-solves the implied growth at a lower discount rate. Read together, the market prices more growth than this model credits &mdash; which is not the same as saying a share is mispriced.</div>
 <p class="note">Implied five-year average growth re-solved at a lower discount rate, everything else held:</p>
-<table><thead><tr><th>Company</th><th>WACC</th><th>Implied growth, 5y average</th><th>At WACC − 1pt</th><th>At WACC − 2pt</th></tr></thead><tbody><tr><td>LVMH</td><td>8.95%</td><td>13.22%</td><td>9.48%</td><td>5.32%</td></tr><tr><td>Hermes</td><td>9.23%</td><td>25.40%</td><td>21.22%</td><td>16.59%</td></tr><tr><td>Kering</td><td>7.95%</td><td>15.23%</td><td>10.73%</td><td>5.59%</td></tr><tr><td>Richemont</td><td>9.42%</td><td>24.05%</td><td>19.98%</td><td>15.51%</td></tr></tbody></table>
-<div class="caveat"><strong>Why Kering values so far below its price.</strong> The model's 72.30 EUR sits about 75% below its 289.75 EUR market price. Normalized over 2022–2025, Kering is valued at an EBIT margin of 18.22% and a starting revenue growth of -13.03%, both medians. The yearly EBIT margin ran 26.12%, 23.48%, 12.96%, 7.33%, so the median sits above the latest year's 7.33%. Yearly revenue growth ran -3.86%, -13.76%, -13.03%. Gross capex over revenue ran -5.26%, -13.34%, -19.61%, -5.66%, years that include property purchases; pooled over the window net of property disposals, the model charges -7.69%. The modelled value is what those medians are worth if they persist; the market price is a bet that they do not.</div>
+<table><thead><tr><th>Company</th><th>WACC</th><th>Implied growth, 5y average</th><th>At WACC − 1pt</th><th>At WACC − 2pt</th></tr></thead><tbody><tr><td>LVMH</td><td>8.95%</td><td>9.15%</td><td>5.29%</td><td>1.08%</td></tr><tr><td>Hermes</td><td>9.23%</td><td>24.73%</td><td>20.45%</td><td>15.74%</td></tr><tr><td>Kering</td><td>7.95%</td><td>15.16%</td><td>10.26%</td><td>4.78%</td></tr><tr><td>Richemont</td><td>9.42%</td><td>22.50%</td><td>17.87%</td><td>12.92%</td></tr></tbody></table>
+<div class="caveat"><strong>Why Kering values so far below its price.</strong> The model's 84.94 EUR sits about 71% below its 289.75 EUR market price. Normalized over 2022–2025, Kering is valued at an EBIT margin of 18.22% and a starting revenue growth of -13.03%, both medians. The yearly EBIT margin ran 26.12%, 23.48%, 12.96%, 7.33%, so the median sits above the latest year's 7.33%. Yearly revenue growth ran -3.86%, -13.76%, -13.03%. Gross capex over revenue ran -5.26%, -13.34%, -19.61%, -5.66%, years that include property purchases; pooled over the window net of property disposals, the model charges -7.69%. The modelled value is what those medians are worth if they persist; the market price is a bet that they do not.</div>
 <h2>Drivers</h2>
-<p class="note">What each valuation is actually built from. Revenue and net debt are the latest reported fiscal year; EBIT margin, tax rate, and the D&amp;A, lease-payment and change-in-working-capital ratios are medians across the fiscal years listed. Capex is pooled over the same years net of property disposals, because property bought one year and sold back the next would otherwise be charged and never credited. Revenue growth is normalized the same way and shown in the Summary table above, not repeated here. Capex, lease payments and the change in working capital are negative exactly when they consume cash; D&amp;A is positive, added back as a non-cash expense. Free cash flow is the plain sum: EBIT &times; (1 &minus; tax) + D&amp;A + capex + lease payments + change in working capital. Leases are treated pre-IFRS 16: the lease payment (last year's current lease liability plus after-tax lease interest) is charged in free cash flow, and lease liabilities are excluded from net debt and from the WACC debt weight.</p>
-<table><thead><tr><th>Company</th><th>Fiscal years</th><th>Revenue (latest)</th><th>EBIT margin (normalized)</th><th>Tax rate (normalized)</th><th>Capex / revenue (normalized)</th><th>D&amp;A / revenue (normalized)</th><th>Lease payments / revenue (normalized)</th><th>Change in WC / revenue (normalized)</th><th>Net debt (latest)</th></tr></thead><tbody><tr><td>LVMH</td><td>2022–2025</td><td>80.81bn EUR</td><td>24.34%</td><td>27.57%</td><td>-6.90%</td><td>8.77%</td><td>-4.18%</td><td>-3.04%</td><td>6.84bn EUR</td></tr><tr><td>Hermes</td><td>2022–2025</td><td>16.00bn EUR</td><td>42.74%</td><td>28.42%</td><td>-6.41%</td><td>5.77%</td><td>-2.29%</td><td>-1.52%</td><td>-12.21bn EUR</td></tr><tr><td>Kering</td><td>2022–2025</td><td>14.68bn EUR</td><td>18.22%</td><td>28.19%</td><td>-7.69%</td><td>10.92%</td><td>-6.05%</td><td>-0.77%</td><td>7.62bn EUR</td></tr><tr><td>Richemont</td><td>2023–2026</td><td>22.42bn EUR</td><td>23.96%</td><td>17.89%</td><td>-5.01%</td><td>7.23%</td><td>-3.80%</td><td>-3.20%</td><td>-8.50bn EUR</td></tr></tbody></table>
+<p class="note">What each valuation is actually built from. Revenue and net debt are the latest reported fiscal year; EBIT margin, tax rate, and the D&amp;A, lease-payment and operating working-capital ratios are medians across the fiscal years listed. Operating working capital is inventory plus trade receivables less trade payables; it is charged on the change in revenue, so it consumes cash only while revenue grows. Capex is pooled over the same years net of property disposals, because property bought one year and sold back the next would otherwise be charged and never credited. Revenue growth is normalized the same way and shown in the Summary table above, not repeated here. Capex and lease payments are negative exactly when they consume cash; D&amp;A is positive, added back as a non-cash expense. Free cash flow is EBIT &times; (1 &minus; tax) + D&amp;A + capex + lease payments &minus; working-capital ratio &times; change in revenue. Leases are treated pre-IFRS 16: the lease payment (last year's current lease liability plus after-tax lease interest) is charged in free cash flow, and lease liabilities are excluded from net debt and from the WACC debt weight.</p>
+<table><thead><tr><th>Company</th><th>Fiscal years</th><th>Revenue (latest)</th><th>EBIT margin (normalized)</th><th>Tax rate (normalized)</th><th>Capex / revenue (normalized)</th><th>D&amp;A / revenue (normalized)</th><th>Lease payments / revenue (normalized)</th><th>Operating WC / revenue (normalized)</th><th>Net debt (latest)</th></tr></thead><tbody><tr><td>LVMH</td><td>2022–2025</td><td>80.81bn EUR</td><td>24.34%</td><td>27.57%</td><td>-6.90%</td><td>8.77%</td><td>-4.18%</td><td>22.43%</td><td>6.84bn EUR</td></tr><tr><td>Hermes</td><td>2022–2025</td><td>16.00bn EUR</td><td>42.74%</td><td>28.42%</td><td>-6.41%</td><td>5.77%</td><td>-2.29%</td><td>15.44%</td><td>-12.21bn EUR</td></tr><tr><td>Kering</td><td>2022–2025</td><td>14.68bn EUR</td><td>18.22%</td><td>28.19%</td><td>-7.69%</td><td>10.92%</td><td>-6.05%</td><td>17.46%</td><td>7.62bn EUR</td></tr><tr><td>Richemont</td><td>2023–2026</td><td>22.42bn EUR</td><td>23.96%</td><td>17.89%</td><td>-5.01%</td><td>7.23%</td><td>-3.80%</td><td>41.14%</td><td>-8.50bn EUR</td></tr></tbody></table>
 <h2>WACC bridge</h2>
 <p class="note">The cost of equity and the cost of debt behind the WACC column in the Summary table, at the market-equity and book-debt weights they are blended at. Cost of debt is published pre-tax, as reported, alongside the after-tax figure actually used in the blend, so the tax shield is not counted twice.</p>
 <table><thead><tr><th>Company</th><th>Beta</th><th>Cost of equity</th><th>Cost of debt (pre-tax)</th><th>Cost of debt (after-tax)</th><th>Equity weight</th><th>Debt weight</th><th>WACC</th></tr></thead><tbody><tr><td>LVMH</td><td>1.30</td><td>9.52%</td><td>3.13%</td><td>2.27%</td><td>92.16%</td><td>7.84%</td><td>8.95%</td></tr><tr><td>Hermes</td><td>1.25</td><td>9.23%</td><td>2.34%</td><td>1.68%</td><td>99.98%</td><td>0.02%</td><td>9.23%</td></tr><tr><td>Kering</td><td>1.36</td><td>9.79%</td><td>3.43%</td><td>2.47%</td><td>74.85%</td><td>25.15%</td><td>7.95%</td></tr><tr><td>Richemont</td><td>1.39</td><td>9.96%</td><td>2.26%</td><td>1.85%</td><td>93.38%</td><td>6.62%</td><td>9.42%</td></tr></tbody></table>
@@ -67,66 +67,66 @@ z
 " style="fill: #ffffff"/>
    </g>
    <g id="patch_3">
-    <path d="M 81.634304 165.628781 
-L 127.774536 165.628781 
-L 127.774536 96.29432 
-L 81.634304 96.29432 
+    <path d="M 81.634304 164.432887 
+L 127.774536 164.432887 
+L 127.774536 115.609683 
+L 81.634304 115.609683 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_4">
-    <path d="M 203.055967 165.628781 
-L 249.1962 165.628781 
+    <path d="M 203.055967 164.432887 
+L 249.1962 164.432887 
 L 249.1962 32.398125 
 L 203.055967 32.398125 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_5">
-    <path d="M 324.477631 165.628781 
-L 370.617863 165.628781 
-L 370.617863 85.716627 
-L 324.477631 85.716627 
+    <path d="M 324.477631 164.432887 
+L 370.617863 164.432887 
+L 370.617863 83.494196 
+L 324.477631 83.494196 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_6">
-    <path d="M 445.899294 165.628781 
-L 492.039526 165.628781 
-L 492.039526 39.434797 
-L 445.899294 39.434797 
+    <path d="M 445.899294 164.432887 
+L 492.039526 164.432887 
+L 492.039526 44.311151 
+L 445.899294 44.311151 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #1f77b4"/>
    </g>
    <g id="patch_7">
-    <path d="M 127.774536 165.628781 
-L 173.914768 165.628781 
-L 173.914768 174.586481 
-L 127.774536 174.586481 
+    <path d="M 127.774536 164.432887 
+L 173.914768 164.432887 
+L 173.914768 173.547272 
+L 127.774536 173.547272 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_8">
-    <path d="M 249.1962 165.628781 
-L 295.336432 165.628781 
-L 295.336432 97.52478 
-L 249.1962 97.52478 
+    <path d="M 249.1962 164.432887 
+L 295.336432 164.432887 
+L 295.336432 95.137633 
+L 249.1962 95.137633 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_9">
-    <path d="M 370.617863 165.628781 
-L 416.758095 165.628781 
+    <path d="M 370.617863 164.432887 
+L 416.758095 164.432887 
 L 416.758095 233.998125 
 L 370.617863 233.998125 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_10">
-    <path d="M 492.039526 165.628781 
-L 538.179759 165.628781 
-L 538.179759 145.703173 
-L 492.039526 145.703173 
+    <path d="M 492.039526 164.432887 
+L 538.179759 164.432887 
+L 538.179759 144.158746 
+L 492.039526 144.158746 
 z
 " clip-path="url(#p9c5211f5e5)" style="fill: #ff7f0e"/>
    </g>
@@ -564,8 +564,8 @@ z
    <g id="matplotlib.axis_2">
     <g id="ytick_1">
      <g id="line2d_5">
-      <path d="M 58.807031 218.091915 
-L 561.007031 218.091915 
+      <path d="M 58.807031 217.813688 
+L 561.007031 217.813688 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_6">
@@ -575,12 +575,12 @@ L -3.5 0
 " style="stroke: #000000; stroke-width: 0.8"/>
       </defs>
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="218.091915" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="217.813688" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_5">
       <!-- −10% -->
-      <g transform="translate(21.200781 221.890743) scale(0.1 -0.1)">
+      <g transform="translate(21.200781 221.612517) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-c9c" d="M 678 2272 
 L 4684 2272 
@@ -681,18 +681,18 @@ z
     </g>
     <g id="ytick_2">
      <g id="line2d_7">
-      <path d="M 58.807031 191.860348 
-L 561.007031 191.860348 
+      <path d="M 58.807031 191.123288 
+L 561.007031 191.123288 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_8">
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="191.860348" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="191.123288" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_6">
       <!-- −5% -->
-      <g transform="translate(27.563281 195.659176) scale(0.1 -0.1)">
+      <g transform="translate(27.563281 194.922116) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-18" d="M 691 4666 
 L 3169 4666 
@@ -728,18 +728,18 @@ z
     </g>
     <g id="ytick_3">
      <g id="line2d_9">
-      <path d="M 58.807031 165.628781 
-L 561.007031 165.628781 
+      <path d="M 58.807031 164.432887 
+L 561.007031 164.432887 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_10">
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="165.628781" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="164.432887" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_7">
       <!-- 0% -->
-      <g transform="translate(35.942969 169.427609) scale(0.1 -0.1)">
+      <g transform="translate(35.942969 168.231715) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-13"/>
        <use xlink:href="#DejaVuSans-8" transform="translate(63.625 0)"/>
       </g>
@@ -747,18 +747,18 @@ L 561.007031 165.628781
     </g>
     <g id="ytick_4">
      <g id="line2d_11">
-      <path d="M 58.807031 139.397214 
-L 561.007031 139.397214 
+      <path d="M 58.807031 137.742486 
+L 561.007031 137.742486 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_12">
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="139.397214" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="137.742486" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_8">
       <!-- 5% -->
-      <g transform="translate(35.942969 143.196042) scale(0.1 -0.1)">
+      <g transform="translate(35.942969 141.541314) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-18"/>
        <use xlink:href="#DejaVuSans-8" transform="translate(63.625 0)"/>
       </g>
@@ -766,18 +766,18 @@ L 561.007031 139.397214
     </g>
     <g id="ytick_5">
      <g id="line2d_13">
-      <path d="M 58.807031 113.165647 
-L 561.007031 113.165647 
+      <path d="M 58.807031 111.052085 
+L 561.007031 111.052085 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_14">
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="113.165647" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="111.052085" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_9">
       <!-- 10% -->
-      <g transform="translate(29.580469 116.964475) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 114.850913) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-14"/>
        <use xlink:href="#DejaVuSans-13" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-8" transform="translate(127.25 0)"/>
@@ -786,18 +786,18 @@ L 561.007031 113.165647
     </g>
     <g id="ytick_6">
      <g id="line2d_15">
-      <path d="M 58.807031 86.93408 
-L 561.007031 86.93408 
+      <path d="M 58.807031 84.361684 
+L 561.007031 84.361684 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_16">
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="86.93408" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="84.361684" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_10">
       <!-- 15% -->
-      <g transform="translate(29.580469 90.732909) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 88.160512) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-14"/>
        <use xlink:href="#DejaVuSans-18" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-8" transform="translate(127.25 0)"/>
@@ -806,18 +806,18 @@ L 561.007031 86.93408
     </g>
     <g id="ytick_7">
      <g id="line2d_17">
-      <path d="M 58.807031 60.702514 
-L 561.007031 60.702514 
+      <path d="M 58.807031 57.671283 
+L 561.007031 57.671283 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_18">
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="60.702514" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="57.671283" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_11">
       <!-- 20% -->
-      <g transform="translate(29.580469 64.501342) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 61.470111) scale(0.1 -0.1)">
        <defs>
         <path id="DejaVuSans-15" d="M 1228 531 
 L 3431 531 
@@ -852,18 +852,18 @@ z
     </g>
     <g id="ytick_8">
      <g id="line2d_19">
-      <path d="M 58.807031 34.470947 
-L 561.007031 34.470947 
+      <path d="M 58.807031 30.980882 
+L 561.007031 30.980882 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #b0b0b0; stroke-opacity: 0.25; stroke-width: 0.8; stroke-linecap: square"/>
      </g>
      <g id="line2d_20">
       <g>
-       <use xlink:href="#m19a50a0fa3" x="58.807031" y="34.470947" style="stroke: #000000; stroke-width: 0.8"/>
+       <use xlink:href="#m19a50a0fa3" x="58.807031" y="30.980882" style="stroke: #000000; stroke-width: 0.8"/>
       </g>
      </g>
      <g id="text_12">
       <!-- 25% -->
-      <g transform="translate(29.580469 38.269775) scale(0.1 -0.1)">
+      <g transform="translate(29.580469 34.779711) scale(0.1 -0.1)">
        <use xlink:href="#DejaVuSans-15"/>
        <use xlink:href="#DejaVuSans-18" transform="translate(63.625 0)"/>
        <use xlink:href="#DejaVuSans-8" transform="translate(127.25 0)"/>
@@ -1005,8 +1005,8 @@ z
     </g>
    </g>
    <g id="line2d_21">
-    <path d="M 58.807031 165.628781 
-L 561.007031 165.628781 
+    <path d="M 58.807031 164.432887 
+L 561.007031 164.432887 
 " clip-path="url(#p9c5211f5e5)" style="fill: none; stroke: #444444; stroke-width: 0.8; stroke-linecap: square"/>
    </g>
    <g id="patch_11">
@@ -1490,32 +1490,32 @@ z
    <g id="patch_7">
     <path d="M 122.618286 244.078125 
 L 168.758518 244.078125 
-L 168.758518 209.532755 
-L 122.618286 209.532755 
+L 168.758518 201.368416 
+L 122.618286 201.368416 
 z
 " clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_8">
     <path d="M 244.03995 244.078125 
 L 290.180182 244.078125 
-L 290.180182 130.712448 
-L 244.03995 130.712448 
+L 290.180182 126.965929 
+L 244.03995 126.965929 
 z
 " clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_9">
     <path d="M 365.461613 244.078125 
 L 411.601845 244.078125 
-L 411.601845 234.687515 
-L 365.461613 234.687515 
+L 411.601845 233.045236 
+L 365.461613 233.045236 
 z
 " clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
    <g id="patch_10">
     <path d="M 486.883276 244.078125 
 L 533.023509 244.078125 
-L 533.023509 232.134253 
-L 486.883276 232.134253 
+L 533.023509 230.571843 
+L 486.883276 230.571843 
 z
 " clip-path="url(#pe4135a5ded)" style="fill: #ff7f0e"/>
    </g>
@@ -2687,7 +2687,7 @@ z
 
 <h2>Sensitivity</h2>
 <p class="note">Value per share across two pairs of assumptions. The first grid moves the model — the discount rate and the perpetual growth rate. The second moves the business — the operating margin and revenue growth. A valuation fragile to the first is an argument about the cost of capital; one fragile to the second is an argument about the company. A dash marks a combination with no meaning, where the discount rate sits at or below the growth rate; it is left blank rather than filled with a number that would look like an answer.</p>
-<h3>LVMH</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>6.95%</td><td>314</td><td>342</td><td>375</td><td>416</td><td>468</td></tr><tr><td>7.95%</td><td>268</td><td>288</td><td>312</td><td>339</td><td>372</td></tr><tr><td>8.95%</td><td>234</td><td>249</td><td>266</td><td>286</td><td>309</td></tr><tr><td>9.95%</td><td>207</td><td>219</td><td>232</td><td>247</td><td>264</td></tr><tr><td>10.95%</td><td>186</td><td>195</td><td>206</td><td>217</td><td>230</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>-5.71%</th><th>-3.71%</th><th>-1.71%</th><th>0.29%</th><th>2.29%</th></tr></thead><tbody><tr><td>20.34%</td><td>180</td><td>189</td><td>199</td><td>210</td><td>220</td></tr><tr><td>22.34%</td><td>210</td><td>221</td><td>233</td><td>245</td><td>257</td></tr><tr><td>24.34%</td><td>240</td><td>253</td><td>266</td><td>280</td><td>294</td></tr><tr><td>26.34%</td><td>271</td><td>285</td><td>299</td><td>315</td><td>330</td></tr><tr><td>28.34%</td><td>301</td><td>317</td><td>333</td><td>350</td><td>367</td></tr></tbody></table><h3>Hermes</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.23%</td><td>998</td><td>1070</td><td>1155</td><td>1257</td><td>1385</td></tr><tr><td>8.23%</td><td>879</td><td>931</td><td>991</td><td>1062</td><td>1146</td></tr><tr><td>9.23%</td><td>788</td><td>828</td><td>873</td><td>924</td><td>984</td></tr><tr><td>10.23%</td><td>718</td><td>748</td><td>783</td><td>822</td><td>866</td></tr><tr><td>11.23%</td><td>661</td><td>685</td><td>713</td><td>743</td><td>778</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>8.98%</th><th>10.98%</th><th>12.98%</th><th>14.98%</th><th>16.98%</th></tr></thead><tbody><tr><td>38.74%</td><td>734</td><td>762</td><td>790</td><td>819</td><td>849</td></tr><tr><td>40.74%</td><td>772</td><td>801</td><td>831</td><td>862</td><td>894</td></tr><tr><td>42.74%</td><td>810</td><td>841</td><td>873</td><td>906</td><td>939</td></tr><tr><td>44.74%</td><td>848</td><td>881</td><td>914</td><td>949</td><td>984</td></tr><tr><td>46.74%</td><td>886</td><td>920</td><td>956</td><td>992</td><td>1030</td></tr></tbody></table><h3>Kering</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>5.95%</td><td>100</td><td>118</td><td>140</td><td>168</td><td>206</td></tr><tr><td>6.95%</td><td>73</td><td>85</td><td>99</td><td>117</td><td>138</td></tr><tr><td>7.95%</td><td>54</td><td>62</td><td>72</td><td>84</td><td>98</td></tr><tr><td>8.95%</td><td>39</td><td>46</td><td>53</td><td>61</td><td>71</td></tr><tr><td>9.95%</td><td>28</td><td>33</td><td>39</td><td>45</td><td>52</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>-17.03%</th><th>-15.03%</th><th>-13.03%</th><th>-11.03%</th><th>-9.03%</th></tr></thead><tbody><tr><td>14.22%</td><td>20</td><td>25</td><td>30</td><td>35</td><td>40</td></tr><tr><td>16.22%</td><td>39</td><td>45</td><td>51</td><td>57</td><td>64</td></tr><tr><td>18.22%</td><td>58</td><td>65</td><td>72</td><td>80</td><td>87</td></tr><tr><td>20.22%</td><td>77</td><td>85</td><td>94</td><td>102</td><td>111</td></tr><tr><td>22.22%</td><td>97</td><td>106</td><td>115</td><td>125</td><td>135</td></tr></tbody></table><h3>Richemont</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (CHF)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.42%</td><td>105</td><td>112</td><td>120</td><td>130</td><td>143</td></tr><tr><td>8.42%</td><td>93</td><td>98</td><td>104</td><td>111</td><td>119</td></tr><tr><td>9.42%</td><td>84</td><td>87</td><td>92</td><td>97</td><td>103</td></tr><tr><td>10.42%</td><td>76</td><td>79</td><td>83</td><td>87</td><td>91</td></tr><tr><td>11.42%</td><td>70</td><td>73</td><td>76</td><td>79</td><td>82</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (CHF)</th><th>-0.20%</th><th>1.80%</th><th>3.80%</th><th>5.80%</th><th>7.80%</th></tr></thead><tbody><tr><td>19.96%</td><td>69</td><td>72</td><td>75</td><td>77</td><td>80</td></tr><tr><td>21.96%</td><td>77</td><td>80</td><td>83</td><td>87</td><td>90</td></tr><tr><td>23.96%</td><td>85</td><td>88</td><td>92</td><td>96</td><td>99</td></tr><tr><td>25.96%</td><td>93</td><td>97</td><td>101</td><td>105</td><td>109</td></tr><tr><td>27.96%</td><td>101</td><td>105</td><td>109</td><td>114</td><td>118</td></tr></tbody></table>
+<h3>LVMH</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>6.95%</td><td>392</td><td>424</td><td>462</td><td>508</td><td>566</td></tr><tr><td>7.95%</td><td>336</td><td>358</td><td>384</td><td>415</td><td>452</td></tr><tr><td>8.95%</td><td>294</td><td>310</td><td>329</td><td>351</td><td>376</td></tr><tr><td>9.95%</td><td>261</td><td>273</td><td>288</td><td>304</td><td>322</td></tr><tr><td>10.95%</td><td>235</td><td>244</td><td>256</td><td>268</td><td>282</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>-5.71%</th><th>-3.71%</th><th>-1.71%</th><th>0.29%</th><th>2.29%</th></tr></thead><tbody><tr><td>20.34%</td><td>240</td><td>251</td><td>262</td><td>274</td><td>286</td></tr><tr><td>22.34%</td><td>270</td><td>283</td><td>295</td><td>309</td><td>323</td></tr><tr><td>24.34%</td><td>301</td><td>314</td><td>329</td><td>344</td><td>359</td></tr><tr><td>26.34%</td><td>331</td><td>346</td><td>362</td><td>379</td><td>396</td></tr><tr><td>28.34%</td><td>361</td><td>378</td><td>396</td><td>414</td><td>432</td></tr></tbody></table><h3>Hermes</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.23%</td><td>1037</td><td>1110</td><td>1196</td><td>1301</td><td>1431</td></tr><tr><td>8.23%</td><td>912</td><td>964</td><td>1025</td><td>1097</td><td>1182</td></tr><tr><td>9.23%</td><td>817</td><td>856</td><td>901</td><td>953</td><td>1013</td></tr><tr><td>10.23%</td><td>742</td><td>773</td><td>808</td><td>847</td><td>891</td></tr><tr><td>11.23%</td><td>682</td><td>707</td><td>734</td><td>765</td><td>799</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>8.98%</th><th>10.98%</th><th>12.98%</th><th>14.98%</th><th>16.98%</th></tr></thead><tbody><tr><td>38.74%</td><td>763</td><td>790</td><td>819</td><td>848</td><td>879</td></tr><tr><td>40.74%</td><td>801</td><td>830</td><td>860</td><td>892</td><td>924</td></tr><tr><td>42.74%</td><td>838</td><td>870</td><td>902</td><td>935</td><td>969</td></tr><tr><td>44.74%</td><td>876</td><td>909</td><td>943</td><td>978</td><td>1014</td></tr><tr><td>46.74%</td><td>914</td><td>949</td><td>985</td><td>1021</td><td>1059</td></tr></tbody></table><h3>Kering</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (EUR)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>5.95%</td><td>117</td><td>134</td><td>156</td><td>183</td><td>220</td></tr><tr><td>6.95%</td><td>88</td><td>100</td><td>113</td><td>130</td><td>151</td></tr><tr><td>7.95%</td><td>67</td><td>76</td><td>85</td><td>96</td><td>109</td></tr><tr><td>8.95%</td><td>52</td><td>58</td><td>65</td><td>73</td><td>82</td></tr><tr><td>9.95%</td><td>40</td><td>44</td><td>50</td><td>55</td><td>62</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (EUR)</th><th>-17.03%</th><th>-15.03%</th><th>-13.03%</th><th>-11.03%</th><th>-9.03%</th></tr></thead><tbody><tr><td>14.22%</td><td>33</td><td>38</td><td>42</td><td>47</td><td>52</td></tr><tr><td>16.22%</td><td>52</td><td>58</td><td>64</td><td>70</td><td>76</td></tr><tr><td>18.22%</td><td>72</td><td>78</td><td>85</td><td>92</td><td>99</td></tr><tr><td>20.22%</td><td>91</td><td>98</td><td>106</td><td>114</td><td>123</td></tr><tr><td>22.22%</td><td>110</td><td>119</td><td>128</td><td>137</td><td>147</td></tr></tbody></table><h3>Richemont</h3><p class="note">Against the model:</p><table><thead><tr><th>WACC \ terminal growth (CHF)</th><th>1.00%</th><th>1.50%</th><th>2.00%</th><th>2.50%</th><th>3.00%</th></tr></thead><tbody><tr><td>7.42%</td><td>121</td><td>128</td><td>137</td><td>147</td><td>160</td></tr><tr><td>8.42%</td><td>107</td><td>112</td><td>118</td><td>125</td><td>133</td></tr><tr><td>9.42%</td><td>96</td><td>100</td><td>104</td><td>109</td><td>115</td></tr><tr><td>10.42%</td><td>87</td><td>90</td><td>93</td><td>97</td><td>101</td></tr><tr><td>11.42%</td><td>80</td><td>82</td><td>85</td><td>88</td><td>91</td></tr></tbody></table><p class="note">Against the business:</p><table><thead><tr><th>EBIT margin \ revenue growth (CHF)</th><th>-0.20%</th><th>1.80%</th><th>3.80%</th><th>5.80%</th><th>7.80%</th></tr></thead><tbody><tr><td>19.96%</td><td>81</td><td>84</td><td>87</td><td>89</td><td>92</td></tr><tr><td>21.96%</td><td>89</td><td>92</td><td>95</td><td>98</td><td>102</td></tr><tr><td>23.96%</td><td>97</td><td>101</td><td>104</td><td>108</td><td>111</td></tr><tr><td>25.96%</td><td>105</td><td>109</td><td>113</td><td>117</td><td>121</td></tr><tr><td>27.96%</td><td>113</td><td>117</td><td>121</td><td>126</td><td>130</td></tr></tbody></table>
 <h2>Stated assumptions</h2>
 <p class="note">Risk-free rate 3.00%, equity risk premium 5.00%. These are assumptions, not measurements; the sensitivity grid above shows what they are worth. Betas are recomputed from five years of weekly returns against the Euro Stoxx 50 rather than taken from a data provider's undocumented field.</p>
 <p class="note">Cash flows are dated from the latest fiscal year-end and rolled forward to the price date, so the first one is discounted over less than a year: LVMH 0.59 years; Hermes 0.59 years; Kering 0.59 years; Richemont 0.34 years.</p>
