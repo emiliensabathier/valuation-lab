@@ -5,6 +5,16 @@ does each share price already imply?
 
 ![ci](https://github.com/emiliensabathier/valuation-lab/actions/workflows/ci.yml/badge.svg)
 
+![Implied five-year average revenue growth against normalized historical growth, for each of the four houses](docs/implied-growth.png)
+
+**In short**
+
+- A reverse DCF finds that the share prices of LVMH, Hermès, Kering and Richemont imply 13–25% average revenue growth over five years, above each house's normalized history.
+- The gap survives a WACC two points lower for Hermès (16.59% implied against 12.98% history) and Richemont (15.51% against 3.80%), not for LVMH or Kering.
+- FCFF with leases treated consistently pre-IFRS 16, capex pooled net of property disposals, WACC from a re-estimated beta.
+
+Rendered report: <https://emiliensabathier.github.io/valuation-lab/>
+
 ## Results
 
 Frozen data pull of 2026-08-07. Full report, with drivers, WACC bridge and sensitivity grids:
@@ -19,8 +29,6 @@ Frozen data pull of 2026-08-07. Full report, with drivers, WACC bridge and sensi
 
 The first implied-growth column is the front of a path that fades linearly to 2%; the second
 is that path's average, and it is the number to compare with the company's own history.
-
-![Implied five-year average revenue growth against normalized historical growth, for each of the four houses](docs/implied-growth.png)
 
 **How to read it.** Every implied average sits above the normalized history, but the gap
 measures the market against *this model*, and the model leans low (see Limitations): working
