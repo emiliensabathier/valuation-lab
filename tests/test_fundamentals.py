@@ -277,3 +277,24 @@ def test_lease_ratio_is_zero_when_no_leases_and_no_debt() -> None:
     drivers = drivers_from(Statements(statements.income, statements.cashflow, balance, {}), "TEST")
 
     assert drivers.lease_ratio == 0.0
+
+
+def test_no_year_with_every_lease_input_still_raises_rather_than_reading_as_no_leases() -> None:
+    statements = _statements([100.0, 90.0], [20.0, 18.0])
+    balance = statements.balance.copy()
+    balance.loc["Capital Lease Obligations"] = [float("nan")] * 2
+    balance.loc["Current Capital Lease Obligation"] = [float("nan")] * 2
+
+    with pytest.raises(ValuationError, match="lease payments"):
+        drivers_from(Statements(statements.income, statements.cashflow, balance, {}), "TEST")
+
+
+def test_lease_ratio_is_zero_when_no_leases_but_the_company_has_debt() -> None:
+    statements = _statements([100.0, 90.0, 80.0], [20.0, 18.0, 16.0])
+    balance = statements.balance.copy()
+    balance.loc["Capital Lease Obligations"] = 0.0
+    balance.loc["Current Capital Lease Obligation"] = 0.0
+
+    drivers = drivers_from(Statements(statements.income, statements.cashflow, balance, {}), "TEST")
+
+    assert drivers.lease_ratio == 0.0
