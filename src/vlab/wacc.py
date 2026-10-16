@@ -63,10 +63,11 @@ def compute_wacc(
     market_cap: float,
     stock_prices: pd.Series,
     market_prices: pd.Series,
+    risk_free: float = RISK_FREE,
 ) -> Wacc:
     """Blend the cost of equity and the after-tax cost of debt at market and book weights."""
     beta = levered_beta(stock_prices, market_prices)
-    cost_of_equity = RISK_FREE + beta * EQUITY_RISK_PREMIUM
+    cost_of_equity = risk_free + beta * EQUITY_RISK_PREMIUM
 
     interest = require(statements.income, "Interest Expense", ticker)
     debt = require(statements.balance, "Total Debt", ticker)

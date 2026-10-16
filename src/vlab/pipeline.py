@@ -21,7 +21,7 @@ from vlab.report.build import build_report
 from vlab.reverse import implied_average_growth, implied_revenue_growth
 from vlab.sensitivity import default_margin_growth_grid, default_wacc_terminal_grid
 from vlab.universe import MARKET_INDEX, PEERS, Company, needs_conversion, tickers
-from vlab.wacc import compute_wacc
+from vlab.wacc import RISK_FREE, compute_wacc
 
 TERMINAL_GROWTH = 0.02
 
@@ -197,7 +197,7 @@ def _stock_prices_for_beta(
     return aligned.iloc[:, 0] / aligned.iloc[:, 1]
 
 
-def _value_company(
+def value_company(
     company: Company,
     prices: pd.DataFrame,
     market_prices: pd.Series,
@@ -206,6 +206,7 @@ def _value_company(
     refresh: bool,
     statement_fetcher: StatementFetcher | None,
     price_fetcher: PriceFetcher | None,
+    risk_free: float = RISK_FREE,
 ) -> CompanyResult:
     """Value one company end to end. Raises DataError or ValuationError on failure.
 
@@ -247,7 +248,7 @@ def _value_company(
     )
     cost_of_capital = compute_wacc(
         statements, company.ticker, drivers, market_cap,
-        stock_prices, market_prices,
+        stock_prices, market_prices, risk_free,
     )
     assumptions = assumptions_from(
         drivers, cost_of_capital.value, TERMINAL_GROWTH, valuation_lag=lag
@@ -325,7 +326,7 @@ def run(
     failures: list[CompanyFailure] = []
     for company in PEERS:
         try:
-            results[company.name] = _value_company(
+            results[company.name] = value_company(
                 company, prices, market_prices,
                 cache_dir=cache_dir, refresh=refresh,
                 statement_fetcher=statement_fetcher, price_fetcher=price_fetcher,

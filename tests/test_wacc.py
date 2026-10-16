@@ -146,3 +146,13 @@ def test_leases_larger_than_total_debt_raise() -> None:
         compute_wacc(
             _wacc_statements(leases=2500.0), "TEST", _wacc_drivers(), 8000.0, market, market
         )
+
+
+def test_compute_wacc_uses_supplied_risk_free() -> None:
+    market = _market()
+    args = (_wacc_statements(), "TEST", _wacc_drivers(), 8000.0, market, market)
+
+    default = compute_wacc(*args)
+    lower = compute_wacc(*args, risk_free=0.04)
+
+    assert lower.cost_of_equity - default.cost_of_equity == pytest.approx(0.01)

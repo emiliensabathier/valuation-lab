@@ -264,3 +264,16 @@ def test_a_single_lease_balance_raises_because_no_payment_can_be_inferred() -> N
 
     with pytest.raises(ValuationError, match="lease payments"):
         drivers_from(Statements(statements.income, statements.cashflow, balance, {}), "TEST")
+
+
+def test_lease_ratio_is_zero_when_no_leases_and_no_debt() -> None:
+    # A debt-free company has nothing to divide the interest split by; the payment is
+    # simply zero, not an unknowable.
+    statements = _statements([100.0, 90.0, 80.0], [20.0, 18.0, 16.0])
+    balance = statements.balance.copy()
+    for line in ("Capital Lease Obligations", "Current Capital Lease Obligation", "Total Debt"):
+        balance.loc[line] = 0.0
+
+    drivers = drivers_from(Statements(statements.income, statements.cashflow, balance, {}), "TEST")
+
+    assert drivers.lease_ratio == 0.0

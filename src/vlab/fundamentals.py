@@ -107,6 +107,10 @@ def _lease_payment_ratio(
         keys=["lease", "current", "debt", "interest", "revenue"],
         sort=False,
     ).dropna().sort_index()
+    # A company with no leases and no borrowings pays no lease charge; without this the
+    # interest split below divides zero by zero and the company is refused as unknowable.
+    if not frame[["lease", "current"]].to_numpy().any():
+        return 0.0
     lease_interest = frame["interest"] * frame["lease"] / frame["debt"]
     payments = frame["current"].shift(1) + lease_interest * (1.0 - tax_rate)
     ratios = (payments / frame["revenue"]).dropna()
