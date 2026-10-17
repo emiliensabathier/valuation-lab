@@ -12,6 +12,7 @@ what the round-trip test in tests/test_reverse.py exists to keep true.
 
 from __future__ import annotations
 
+import math
 from dataclasses import replace
 
 from scipy.optimize import brentq
@@ -56,6 +57,13 @@ def _solve(field: str, bracket: tuple[float, float], drivers: Drivers,
         return value(drivers, replace(assumptions, **{field: candidate})).value_per_share - price
 
     gap_low, gap_high = gap(low), gap(high)
+    if not (math.isfinite(gap_low) and math.isfinite(gap_high)):
+        # A NaN passes the same-sign check below (nan * x > 0 is False) and brentq would raise
+        # a bare ValueError, which callers mapping ValuationError to "unavailable" miss.
+        raise ValuationError(
+            f"the model value is not finite at the edges of the {field.replace('_', ' ')} "
+            f"bracket [{low}, {high}]; an input to the valuation is missing or degenerate"
+        )
     if gap_low * gap_high > 0.0:
         # Both ends sit on the same side of the price. Value normally rises with growth, so a
         # price above both lies beyond the ceiling; if it falls with growth, the reverse.

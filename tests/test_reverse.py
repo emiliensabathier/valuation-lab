@@ -107,3 +107,14 @@ def test_a_price_below_the_bracket_says_the_implied_growth_lies_below_it() -> No
 
     assert excinfo.value.side == "below"
     assert excinfo.value.bound == GROWTH_BRACKET[0]
+
+
+def test_a_model_value_that_is_not_finite_raises_a_valuation_error_not_a_value_error() -> None:
+    # A NaN gap slips past the same-sign check (nan * x > 0 is False) and brentq raises a bare
+    # ValueError, which callers that map ValuationError to "unavailable" do not catch.
+    drivers = replace(_drivers(), net_debt=float("nan"))
+
+    with pytest.raises(ValuationError, match="not finite") as excinfo:
+        implied_revenue_growth(drivers, _assumptions(), 50.0)
+
+    assert not isinstance(excinfo.value, GrowthOutOfRange)

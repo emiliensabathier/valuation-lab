@@ -30,6 +30,7 @@ from vlab.universe import MARKET_INDEX, PEERS, Company, needs_conversion, ticker
 from vlab.wacc import RISK_FREE, compute_wacc
 
 TERMINAL_GROWTH = 0.02
+BETA_CURRENCIES = ("reporting", "trading")
 
 # The implied growth is re-solved at the computed WACC lowered by these steps. The model's
 # discount rates come from raw five-year betas of 1.2-1.4 and a 5% equity risk premium, which
@@ -230,16 +231,24 @@ def value_company(
     price_fetcher: PriceFetcher | None,
     risk_free: float = RISK_FREE,
     max_valuation_lag: float = MAX_VALUATION_LAG,
+    beta_currency: str = "reporting",
 ) -> CompanyResult:
     """Value one company end to end. Raises DataError or ValuationError on failure.
 
     ``max_valuation_lag`` widens how long after the latest fiscal year-end the price may be
     observed (see ``dcf.Assumptions``); the default keeps this report's one-year rule.
 
+    ``beta_currency`` is the currency the stock's returns are regressed in: "reporting" (the
+    default, this report's rule: the stock is converted to match a EUR index, see
+    ``_stock_prices_for_beta``) or "trading" (the stock is left as quoted; the caller supplies
+    ``market_prices`` in that same trading currency).
+
     The FX rate for a cross-currency company is fetched here, inside the per-company try in
     ``run``, rather than in a shared pre-loop -- so a rate that fails to fetch fails only the
     one company that needed it, not the three that did not.
     """
+    if beta_currency not in BETA_CURRENCIES:
+        raise ValueError(f"beta_currency must be one of {BETA_CURRENCIES}, got {beta_currency!r}")
     statements = load_statements(
         company.ticker, cache_dir=cache_dir, refresh=refresh, fetcher=statement_fetcher
     )
@@ -268,9 +277,13 @@ def value_company(
     price_in_reporting = price / _rate_for(company, rates) if needs_conversion(company) else price
     market_cap = price_in_reporting * shares
 
-    stock_prices = _stock_prices_for_beta(
-        company, prices[company.ticker],
-        cache_dir=cache_dir, refresh=refresh, price_fetcher=price_fetcher,
+    stock_prices = (
+        prices[company.ticker]
+        if beta_currency == "trading"
+        else _stock_prices_for_beta(
+            company, prices[company.ticker],
+            cache_dir=cache_dir, refresh=refresh, price_fetcher=price_fetcher,
+        )
     )
     cost_of_capital = compute_wacc(
         statements, company.ticker, drivers, market_cap,

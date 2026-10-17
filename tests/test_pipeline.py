@@ -521,3 +521,27 @@ def test_a_lower_wacc_step_that_cannot_be_solved_is_left_out_not_fatal(
     result = _lvmh_value(tmp_path, days_after_year_end=0)
 
     assert set(result.implied_average_growth_at_lower_wacc) == {0.01}
+
+
+def test_value_company_can_measure_beta_in_the_trading_currency(tmp_path: Path) -> None:
+    # A caller that benchmarks each listing on its local index, in the currency it trades in,
+    # regresses the unconverted stock; the FX difference then goes through the risk-free rate.
+    frame = _fake_price_fetcher(["CFR.SW", MARKET_INDEX], "5y", "1wk")
+    result = value_company(
+        Company("CFR.SW", "Richemont", "EUR", "CHF"), frame, frame[MARKET_INDEX],
+        cache_dir=tmp_path, refresh=True,
+        statement_fetcher=_fake_statement_fetcher, price_fetcher=_fake_price_fetcher,
+        beta_currency="trading",
+    )
+
+    assert result.beta == pytest.approx(
+        levered_beta(frame["CFR.SW"], frame[MARKET_INDEX]), rel=1e-9
+    )
+    assert result.beta != pytest.approx(
+        levered_beta(_cfr_stock_prices_in_eur(), frame[MARKET_INDEX])
+    )
+
+
+def test_value_company_rejects_an_unknown_beta_currency(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="beta_currency"):
+        _lvmh_value(tmp_path, days_after_year_end=30, beta_currency="index")
