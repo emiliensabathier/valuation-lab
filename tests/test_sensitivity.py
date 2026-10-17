@@ -102,3 +102,19 @@ def test_a_richer_margin_is_worth_more_at_every_growth_rate() -> None:
     for column in table.columns:
         values = table[column].dropna()
         assert values.is_monotonic_increasing, column
+
+
+def test_the_centre_cells_equal_the_valuation_at_unrounded_assumptions() -> None:
+    # Assumptions off the 4-decimal grid: the centre cell must be valued at the exact rates,
+    # not at the rounded labels, or it disagrees with the headline value per share.
+    drivers = replace(_drivers(), revenue_growth=0.051234567, ebit_margin=0.201234567)
+    assumptions = Assumptions(0.051234567, 0.201234567, 0.02, 0.0912345678, 5)
+    expected = value(drivers, assumptions).value_per_share
+
+    wacc_table = default_wacc_terminal_grid(drivers, assumptions)
+    margin_table = default_margin_growth_grid(drivers, assumptions)
+
+    assert wacc_table.iloc[2, 2] == pytest.approx(expected, rel=1e-12)
+    assert margin_table.iloc[2, 2] == pytest.approx(expected, rel=1e-12)
+    assert list(wacc_table.index) == [0.0712, 0.0812, 0.0912, 0.1012, 0.1112]
+    assert list(margin_table.columns) == [0.0112, 0.0312, 0.0512, 0.0712, 0.0912]

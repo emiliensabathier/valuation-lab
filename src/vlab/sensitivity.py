@@ -46,21 +46,30 @@ def grid(
     return table
 
 
+def _around(base: float, steps: tuple[float, ...]) -> list[float]:
+    return [base + step for step in steps]
+
+
+def _labelled(table: pd.DataFrame) -> pd.DataFrame:
+    """Round only the labels: the cells stay valued at the exact rates, so the centre cell is
+    the headline value per share rather than a valuation at rates rounded to four decimals."""
+    return table.set_axis([round(row, 4) for row in table.index], axis=0).set_axis(
+        [round(column, 4) for column in table.columns], axis=1
+    )
+
+
 def default_wacc_terminal_grid(drivers: Drivers, assumptions: Assumptions) -> pd.DataFrame:
     """The grid an analyst expects: discount rate against perpetual growth.
 
     This one varies what the analyst assumes about the *market*.
     """
-    waccs = [round(assumptions.wacc + step, 4) for step in (-0.02, -0.01, 0.0, 0.01, 0.02)]
-    growths = [
-        round(assumptions.terminal_growth + step, 4)
-        for step in (-0.01, -0.005, 0.0, 0.005, 0.01)
-    ]
-    return grid(
+    waccs = _around(assumptions.wacc, (-0.02, -0.01, 0.0, 0.01, 0.02))
+    growths = _around(assumptions.terminal_growth, (-0.01, -0.005, 0.0, 0.005, 0.01))
+    return _labelled(grid(
         drivers, assumptions,
         row_field="wacc", row_values=waccs,
         column_field="terminal_growth", column_values=growths,
-    )
+    ))
 
 
 def default_margin_growth_grid(drivers: Drivers, assumptions: Assumptions) -> pd.DataFrame:
@@ -70,15 +79,10 @@ def default_margin_growth_grid(drivers: Drivers, assumptions: Assumptions) -> pd
     above, it answers a question the first cannot: is this valuation fragile because of the
     discount rate, or because of the company?
     """
-    margins = [
-        round(assumptions.ebit_margin + step, 4) for step in (-0.04, -0.02, 0.0, 0.02, 0.04)
-    ]
-    growths = [
-        round(assumptions.revenue_growth + step, 4)
-        for step in (-0.04, -0.02, 0.0, 0.02, 0.04)
-    ]
-    return grid(
+    margins = _around(assumptions.ebit_margin, (-0.04, -0.02, 0.0, 0.02, 0.04))
+    growths = _around(assumptions.revenue_growth, (-0.04, -0.02, 0.0, 0.02, 0.04))
+    return _labelled(grid(
         drivers, assumptions,
         row_field="ebit_margin", row_values=margins,
         column_field="revenue_growth", column_values=growths,
-    )
+    ))
