@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from vlab.data.loader import Statements, require
+from vlab.data.loader import Statements, latest, require
 from vlab.errors import DataError, ValuationError
 from vlab.fundamentals import Drivers
 
@@ -72,10 +72,10 @@ def compute_wacc(
     interest = require(statements.income, "Interest Expense", ticker)
     debt = require(statements.balance, "Total Debt", ticker)
     leases = require(statements.balance, "Capital Lease Obligations", ticker)
-    total_debt = float(debt.iloc[0])
+    total_debt = latest(debt, "Total Debt", ticker)
     # Lease liabilities are paid through the free cash flow (``Drivers.lease_ratio``), so they
     # are left out of the debt weight here, exactly as they are left out of net debt.
-    gross_debt = total_debt - float(leases.iloc[0])
+    gross_debt = total_debt - latest(leases, "Capital Lease Obligations", ticker)
     if gross_debt < 0.0:
         raise DataError(
             f"{ticker}: reported lease liabilities exceed total debt; the balance sheet does "
@@ -88,7 +88,7 @@ def compute_wacc(
 
     # Reported interest includes lease interest. Spread pro rata over total debt it is one
     # rate for leases and borrowings alike, which is the rate the borrowings are priced at.
-    cost_of_debt = float(interest.iloc[0]) / total_debt
+    cost_of_debt = latest(interest, "Interest Expense", ticker) / total_debt
     if cost_of_debt < 0.0:
         # Interest expense is reported positive by this data source, so a negative cost of
         # debt means the sign convention is not what the model assumes. Blending it would

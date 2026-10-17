@@ -156,3 +156,17 @@ def test_compute_wacc_uses_supplied_risk_free() -> None:
     lower = compute_wacc(*args, risk_free=0.04)
 
     assert lower.cost_of_equity - default.cost_of_equity == pytest.approx(0.01)
+
+
+@pytest.mark.parametrize("field", ["interest", "debt", "leases"])
+def test_a_latest_year_left_blank_raises_rather_than_returning_a_nan_wacc(field: str) -> None:
+    # The source can carry a line with its latest year empty (a company that stopped
+    # disclosing it). A NaN cost of debt would pass every comparison below and surface as a
+    # NaN value and a solver crash far from its cause.
+    market = _market()
+
+    with pytest.raises(DataError, match="latest"):
+        compute_wacc(
+            _wacc_statements(**{field: float("nan")}), "TEST", _wacc_drivers(), 8000.0,
+            market, market,
+        )

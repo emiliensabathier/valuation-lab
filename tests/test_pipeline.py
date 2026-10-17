@@ -15,6 +15,7 @@ from vlab.pipeline import (
     convert_to_trading_currency,
     run,
     valuation_lag,
+    value_company,
 )
 from vlab.reverse import implied_average_growth
 from vlab.sensitivity import default_wacc_terminal_grid
@@ -476,3 +477,47 @@ def test_run_reports_the_implied_growth_at_lower_discount_rates(tmp_path: Path) 
             implied_average_growth(lvmh.drivers, assumptions, lvmh.price), rel=1e-6
         )
         assert implied < lvmh.implied_average_growth
+
+
+def _lvmh_value(tmp_path: Path, *, days_after_year_end: int, **kwargs):
+    frame = _fake_price_fetcher(["MC.PA", MARKET_INDEX], "5y", "1wk")
+    frame = frame.set_index(frame.index + pd.Timedelta(days=days_after_year_end))
+    return value_company(
+        Company("MC.PA", "LVMH", "EUR", "EUR"), frame, frame[MARKET_INDEX],
+        cache_dir=tmp_path, refresh=True,
+        statement_fetcher=_fake_statement_fetcher, price_fetcher=_fake_price_fetcher,
+        **kwargs,
+    )
+
+
+def test_value_company_refuses_a_price_over_a_year_old_by_default(tmp_path: Path) -> None:
+    with pytest.raises(ValuationError, match="lag"):
+        _lvmh_value(tmp_path, days_after_year_end=400)
+
+
+def test_value_company_accepts_a_longer_lag_when_the_caller_allows_it(tmp_path: Path) -> None:
+    result = _lvmh_value(tmp_path, days_after_year_end=400, max_valuation_lag=1.5)
+
+    assert result.valuation_lag == pytest.approx(400 / 365.25)
+    assumptions = assumptions_from(
+        result.drivers, result.wacc, TERMINAL_GROWTH,
+        valuation_lag=400 / 365.25, max_valuation_lag=1.5,
+    )
+    assert result.value_per_share == pytest.approx(
+        value(result.drivers, assumptions).value_per_share, rel=1e-12
+    )
+
+
+def test_a_lower_wacc_step_that_cannot_be_solved_is_left_out_not_fatal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The re-solve at a lower discount rate is a secondary reading of the same price. A step
+    # that drops the rate to the terminal growth rate (or a price that leaves the bracket only
+    # there) must not take the headline valuation down with it; the report prints a dash.
+    import vlab.pipeline as pipeline
+
+    monkeypatch.setattr(pipeline, "LOWER_WACC_STEPS", (0.01, 0.95))
+
+    result = _lvmh_value(tmp_path, days_after_year_end=0)
+
+    assert set(result.implied_average_growth_at_lower_wacc) == {0.01}

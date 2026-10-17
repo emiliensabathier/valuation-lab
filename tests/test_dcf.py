@@ -191,3 +191,25 @@ def test_assumptions_from_carries_the_valuation_lag() -> None:
     assumptions = assumptions_from(_drivers(), wacc=0.10, terminal_growth=0.02, valuation_lag=0.4)
 
     assert assumptions.valuation_lag == 0.4
+
+
+def test_a_caller_can_accept_a_price_more_than_a_year_after_the_fiscal_year_end() -> None:
+    # A September year-end company is priced more than a year after it for the weeks before
+    # its next annual report is filed. A caller who knows that can widen the window; the
+    # flows are still rolled forward to the price date, now past the first projected year.
+    base = value(_drivers(), _assumptions())
+    rolled = value(_drivers(), _assumptions(valuation_lag=1.2, max_valuation_lag=1.5))
+
+    assert rolled.enterprise_value == pytest.approx(base.enterprise_value * 1.10**1.2)
+
+    with pytest.raises(ValuationError, match="1.5"):
+        value(_drivers(), _assumptions(valuation_lag=1.5, max_valuation_lag=1.5))
+
+
+def test_assumptions_from_carries_the_accepted_lag_window() -> None:
+    assumptions = assumptions_from(
+        _drivers(), wacc=0.10, terminal_growth=0.02, valuation_lag=1.1, max_valuation_lag=1.5
+    )
+
+    assert assumptions.max_valuation_lag == 1.5
+    assert assumptions_from(_drivers(), 0.10, 0.02).max_valuation_lag == 1.0

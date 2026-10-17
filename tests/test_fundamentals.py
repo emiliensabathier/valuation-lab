@@ -298,3 +298,30 @@ def test_lease_ratio_is_zero_when_no_leases_but_the_company_has_debt() -> None:
     drivers = drivers_from(Statements(statements.income, statements.cashflow, balance, {}), "TEST")
 
     assert drivers.lease_ratio == 0.0
+
+
+@pytest.mark.parametrize(
+    ("frame", "line"),
+    [
+        ("balance", "Capital Lease Obligations"),
+        ("balance", "Total Debt"),
+        ("balance", "Minority Interest"),
+        ("balance", "Ordinary Shares Number"),
+    ],
+)
+def test_a_latest_year_left_blank_raises_rather_than_producing_nan_drivers(
+    frame: str, line: str
+) -> None:
+    # A line reported for older years but blank in the latest one (a company that stopped
+    # disclosing it) used to give a NaN net debt, a NaN value and a solver crash downstream.
+    statements = _statements([100.0, 90.0, 80.0], [20.0, 18.0, 16.0])
+    table = getattr(statements, frame).copy()
+    table.loc[line, table.columns[0]] = float("nan")
+    blanked = Statements(
+        **{**{name: getattr(statements, name) for name in ("income", "cashflow", "balance")},
+           frame: table},
+        info=statements.info,
+    )
+
+    with pytest.raises(DataError, match="latest"):
+        drivers_from(blanked, "TEST")

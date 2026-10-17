@@ -69,6 +69,20 @@ def require(frame: pd.DataFrame, line: str, ticker: str) -> pd.Series:
     return row
 
 
+def latest(series: pd.Series, line: str, ticker: str) -> float:
+    """The most recent reported value of one line, or raise if that year was left blank.
+
+    Statements arrive most-recent-first, so the latest year is ``iloc[0]``. A source can keep a
+    line for older years and leave the latest one empty (a company that stopped disclosing
+    it); a NaN there passes every comparison it meets and surfaces as a NaN valuation, so it
+    stops here with the line named instead.
+    """
+    value = float(series.iloc[0])
+    if value != value:  # NaN
+        raise DataError(f"{ticker}: statement line {line!r} is blank in the latest year")
+    return value
+
+
 def _paths(cache_dir: Path, ticker: str) -> tuple[Path, Path]:
     safe = ticker.replace(".", "_").replace("^", "idx_")
     return cache_dir / f"{safe}.parquet", cache_dir / f"{safe}.json"

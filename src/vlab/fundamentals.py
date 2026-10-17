@@ -14,7 +14,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from vlab.data.loader import Statements, require
+from vlab.data.loader import Statements, latest, require
 from vlab.errors import ValuationError
 
 
@@ -192,21 +192,27 @@ def drivers_from(statements: Statements, ticker: str) -> Drivers:
     fiscal_years = tuple(sorted(str(period.date()) for period in revenue.dropna().index))
 
     tax_rate = _median_ratio(tax, pretax)
+    # Before the latest-year checks below: no usable lease history is the more specific refusal.
+    lease_ratio = _lease_payment_ratio(
+        leases, current_leases, debt, interest, revenue, tax_rate, ticker
+    )
 
     return Drivers(
-        revenue=float(revenue.iloc[0]),
+        revenue=latest(revenue, "Total Revenue", ticker),
         revenue_growth=float(np.median(growth.to_numpy())),
         ebit_margin=margin,
         tax_rate=tax_rate,
         capex_ratio=_net_capex_ratio(capex, disposals, revenue, ticker),
         da_ratio=_median_ratio(depreciation, revenue),
         nwc_intensity=_median_ratio(inventory + receivables - payables, revenue),
-        net_debt=float(debt.iloc[0] - leases.iloc[0] - cash.iloc[0]),
-        minority_interest=float(minorities.iloc[0]),
-        shares=float(shares.iloc[0]),
-        lease_ratio=_lease_payment_ratio(
-            leases, current_leases, debt, interest, revenue, tax_rate, ticker
+        net_debt=(
+            latest(debt, "Total Debt", ticker)
+            - latest(leases, "Capital Lease Obligations", ticker)
+            - latest(cash, "Cash Cash Equivalents And Short Term Investments", ticker)
         ),
+        minority_interest=latest(minorities, "Minority Interest", ticker),
+        shares=latest(shares, "Ordinary Shares Number", ticker),
+        lease_ratio=lease_ratio,
         fiscal_years=fiscal_years,
         ebit_margins=_history(ebit, revenue),
         revenue_growths=tuple(float(value) for value in growth),

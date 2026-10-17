@@ -5,7 +5,7 @@ import pytest
 from vlab.dcf import Assumptions, value
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
-from vlab.reverse import implied_revenue_growth
+from vlab.reverse import GROWTH_BRACKET, GrowthOutOfRange, implied_revenue_growth
 
 
 def _drivers() -> Drivers:
@@ -82,3 +82,28 @@ def test_a_higher_price_implies_a_higher_growth_rate() -> None:
     assert implied_revenue_growth(drivers, _assumptions(), high) > implied_revenue_growth(
         drivers, _assumptions(), low
     )
+
+
+def test_a_price_above_the_bracket_says_the_implied_growth_lies_above_it() -> None:
+    # The side is what lets a caller still say something: "the price implies more than the
+    # ceiling" is a finding, where a bare refusal is not.
+    drivers = _drivers()
+    absurd = value(drivers, _assumptions(revenue_growth=0.24)).value_per_share * 5
+
+    with pytest.raises(GrowthOutOfRange) as excinfo:
+        implied_revenue_growth(drivers, _assumptions(), absurd)
+
+    assert excinfo.value.side == "above"
+    assert excinfo.value.bound == GROWTH_BRACKET[1]
+    assert isinstance(excinfo.value, ValuationError)
+
+
+def test_a_price_below_the_bracket_says_the_implied_growth_lies_below_it() -> None:
+    drivers = _drivers()
+    tiny = value(drivers, _assumptions(revenue_growth=-0.20)).value_per_share / 5
+
+    with pytest.raises(GrowthOutOfRange) as excinfo:
+        implied_revenue_growth(drivers, _assumptions(), tiny)
+
+    assert excinfo.value.side == "below"
+    assert excinfo.value.bound == GROWTH_BRACKET[0]

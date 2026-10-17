@@ -19,6 +19,7 @@ Cash flows are dated from the latest fiscal year-end, but the share price is obs
 months later. ``Assumptions.valuation_lag`` is that gap in years; every flow is discounted to
 the price date rather than to the balance-sheet date, which is the same as rolling the
 enterprise value forward at the WACC. Flows are still taken at year-end, not mid-year.
+The lag must stay below ``Assumptions.max_valuation_lag``, one year unless a caller widens it.
 """
 
 from __future__ import annotations
@@ -27,6 +28,11 @@ from dataclasses import dataclass
 
 from vlab.errors import ValuationError
 from vlab.fundamentals import Drivers
+
+# A price observed a year or more after the statements it is compared with is, by default,
+# priced on a year of results the model has not seen. A caller that values companies between
+# a fiscal year-end and the filing of its annual report can widen this (see Assumptions).
+MAX_VALUATION_LAG = 1.0
 
 
 @dataclass(frozen=True)
@@ -39,6 +45,7 @@ class Assumptions:
     wacc: float
     years: int = 5
     valuation_lag: float = 0.0
+    max_valuation_lag: float = MAX_VALUATION_LAG
 
 
 @dataclass(frozen=True)
@@ -54,7 +61,11 @@ class Valuation:
 
 
 def assumptions_from(
-    drivers: Drivers, wacc: float, terminal_growth: float, valuation_lag: float = 0.0
+    drivers: Drivers,
+    wacc: float,
+    terminal_growth: float,
+    valuation_lag: float = 0.0,
+    max_valuation_lag: float = MAX_VALUATION_LAG,
 ) -> Assumptions:
     """Start from the company's own normalized history, then let the caller vary it."""
     return Assumptions(
@@ -63,6 +74,7 @@ def assumptions_from(
         terminal_growth=terminal_growth,
         wacc=wacc,
         valuation_lag=valuation_lag,
+        max_valuation_lag=max_valuation_lag,
     )
 
 
@@ -132,10 +144,12 @@ def _require_feasible(assumptions: Assumptions) -> None:
             f"WACC ({assumptions.wacc:.4f}) is at or below the terminal growth rate "
             f"({assumptions.terminal_growth:.4f}); the Gordon formula has no meaning there"
         )
-    if not 0.0 <= assumptions.valuation_lag < 1.0:
+    limit = assumptions.max_valuation_lag
+    if not 0.0 <= assumptions.valuation_lag < limit:
+        within = "a year" if limit == MAX_VALUATION_LAG else f"{limit:g} years"
         raise ValuationError(
             f"valuation lag of {assumptions.valuation_lag:.3f} years: the price must be "
-            "observed after the latest fiscal year-end and within a year of it"
+            f"observed after the latest fiscal year-end and within {within} of it"
         )
 
 

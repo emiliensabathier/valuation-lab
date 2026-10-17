@@ -14,7 +14,13 @@ from vlab.data.loader import (
     load_prices,
     load_statements,
 )
-from vlab.dcf import assumptions_from, terminal_exit_multiple, value
+from vlab.dcf import (
+    MAX_VALUATION_LAG,
+    Assumptions,
+    assumptions_from,
+    terminal_exit_multiple,
+    value,
+)
 from vlab.errors import DataError, ValuationError
 from vlab.fundamentals import Drivers, drivers_from
 from vlab.report.build import build_report
@@ -48,7 +54,9 @@ class CompanyResult:
     every value on this record is discounted to the price date (see ``dcf.Assumptions``).
 
     ``implied_average_growth_at_lower_wacc`` maps each step in ``LOWER_WACC_STEPS`` to the
-    5-year average implied growth re-solved at ``wacc`` minus that step.
+    5-year average implied growth re-solved at ``wacc`` minus that step. A step the price
+    cannot be solved at (outside the growth bracket, or a rate at the terminal growth) is
+    left out rather than refusing the whole valuation; the report shows a dash for it.
 
     ``cost_of_equity``, ``cost_of_debt``, ``equity_weight`` and ``debt_weight`` are carried
     through from ``wacc.Wacc`` so the report can publish the WACC bridge, not only the blended
@@ -108,6 +116,20 @@ def valuation_lag(fiscal_year_end: str, price_date: pd.Timestamp) -> float:
             f"{fiscal_year_end} the cash flows start from"
         )
     return lag
+
+
+def _implied_at_lower_waccs(
+    drivers: Drivers, assumptions: Assumptions, price: float
+) -> dict[float, float]:
+    """The implied average growth at each lower WACC step that can be solved."""
+    implied: dict[float, float] = {}
+    for step in LOWER_WACC_STEPS:
+        lowered = replace(assumptions, wacc=assumptions.wacc - step)
+        try:
+            implied[step] = implied_average_growth(drivers, lowered, price)
+        except ValuationError:
+            continue
+    return implied
 
 
 def _fx_pair(company: Company) -> str:
@@ -207,8 +229,12 @@ def value_company(
     statement_fetcher: StatementFetcher | None,
     price_fetcher: PriceFetcher | None,
     risk_free: float = RISK_FREE,
+    max_valuation_lag: float = MAX_VALUATION_LAG,
 ) -> CompanyResult:
     """Value one company end to end. Raises DataError or ValuationError on failure.
+
+    ``max_valuation_lag`` widens how long after the latest fiscal year-end the price may be
+    observed (see ``dcf.Assumptions``); the default keeps this report's one-year rule.
 
     The FX rate for a cross-currency company is fetched here, inside the per-company try in
     ``run``, rather than in a shared pre-loop -- so a rate that fails to fetch fails only the
@@ -251,7 +277,8 @@ def value_company(
         stock_prices, market_prices, risk_free,
     )
     assumptions = assumptions_from(
-        drivers, cost_of_capital.value, TERMINAL_GROWTH, valuation_lag=lag
+        drivers, cost_of_capital.value, TERMINAL_GROWTH,
+        valuation_lag=lag, max_valuation_lag=max_valuation_lag,
     )
     valuation = value(drivers, assumptions)
 
@@ -277,12 +304,9 @@ def value_company(
         implied_average_growth=implied_average_growth(
             drivers, assumptions, price_in_reporting
         ),
-        implied_average_growth_at_lower_wacc={
-            step: implied_average_growth(
-                drivers, replace(assumptions, wacc=assumptions.wacc - step), price_in_reporting
-            )
-            for step in LOWER_WACC_STEPS
-        },
+        implied_average_growth_at_lower_wacc=_implied_at_lower_waccs(
+            drivers, assumptions, price_in_reporting
+        ),
         normalized_growth=drivers.revenue_growth,
         wacc=cost_of_capital.value,
         beta=cost_of_capital.beta,
