@@ -24,7 +24,7 @@ from vlab.dcf import (
 from vlab.errors import DataError, ValuationError
 from vlab.fundamentals import Drivers, drivers_from
 from vlab.report.build import build_report
-from vlab.reverse import implied_average_growth, implied_revenue_growth
+from vlab.reverse import GrowthOutOfRange, implied_average_growth, implied_revenue_growth
 from vlab.sensitivity import default_margin_growth_grid, default_wacc_terminal_grid
 from vlab.universe import MARKET_INDEX, PEERS, Company, needs_conversion, tickers
 from vlab.wacc import RISK_FREE, compute_wacc
@@ -62,6 +62,10 @@ class CompanyResult:
     ``cost_of_equity``, ``cost_of_debt``, ``equity_weight`` and ``debt_weight`` are carried
     through from ``wacc.Wacc`` so the report can publish the WACC bridge, not only the blended
     figure -- ``cost_of_debt`` is the **pre-tax** rate, exactly as on ``Wacc``.
+
+    ``implied_growth`` and ``implied_average_growth`` are None only when the caller asked
+    ``value_company`` to keep a valuation whose price lies beyond the growth bracket; then
+    ``implied_growth_side`` ("above" or "below") and ``implied_growth_bound`` say where.
     """
 
     name: str
@@ -70,8 +74,8 @@ class CompanyResult:
     trading_currency: str
     price: float
     value_per_share: float
-    implied_growth: float
-    implied_average_growth: float
+    implied_growth: float | None
+    implied_average_growth: float | None
     implied_average_growth_at_lower_wacc: dict[float, float]
     normalized_growth: float
     wacc: float
@@ -86,6 +90,8 @@ class CompanyResult:
     margin_sensitivity: pd.DataFrame
     drivers: Drivers
     valuation_lag: float
+    implied_growth_side: str | None = None
+    implied_growth_bound: float | None = None
 
 
 @dataclass(frozen=True)
@@ -131,6 +137,19 @@ def _implied_at_lower_waccs(
         except ValuationError:
             continue
     return implied
+
+
+def _implied(
+    drivers: Drivers, assumptions: Assumptions, price: float, *, keep_on_growth_miss: bool
+) -> tuple[float | None, float | None, str | None, float | None]:
+    """First-year and average implied growth, or the side and bound the price lies beyond."""
+    try:
+        first_year = implied_revenue_growth(drivers, assumptions, price)
+    except GrowthOutOfRange as exc:
+        if not keep_on_growth_miss:
+            raise
+        return None, None, exc.side, exc.bound
+    return first_year, implied_average_growth(drivers, assumptions, price), None, None
 
 
 def _fx_pair(company: Company) -> str:
@@ -232,6 +251,7 @@ def value_company(
     risk_free: float = RISK_FREE,
     max_valuation_lag: float = MAX_VALUATION_LAG,
     beta_currency: str = "reporting",
+    keep_on_growth_miss: bool = False,
 ) -> CompanyResult:
     """Value one company end to end. Raises DataError or ValuationError on failure.
 
@@ -242,6 +262,10 @@ def value_company(
     default, this report's rule: the stock is converted to match a EUR index, see
     ``_stock_prices_for_beta``) or "trading" (the stock is left as quoted; the caller supplies
     ``market_prices`` in that same trading currency).
+
+    ``keep_on_growth_miss`` keeps the valuation, WACC bridge and grids when the price implies
+    growth beyond the reverse DCF's bracket, leaving the implied growth None (see
+    ``CompanyResult``); by default ``GrowthOutOfRange`` propagates and ``run`` records it.
 
     The FX rate for a cross-currency company is fetched here, inside the per-company try in
     ``run``, rather than in a shared pre-loop -- so a rate that fails to fetch fails only the
@@ -305,6 +329,9 @@ def value_company(
     margin_sensitivity = _convert_grid_to_trading_currency(
         default_margin_growth_grid(drivers, assumptions), company, rates
     )
+    implied_growth, implied_average, side, bound = _implied(
+        drivers, assumptions, price_in_reporting, keep_on_growth_miss=keep_on_growth_miss
+    )
 
     return CompanyResult(
         name=company.name,
@@ -313,10 +340,8 @@ def value_company(
         trading_currency=company.trading_currency,
         price=price,
         value_per_share=value_per_share,
-        implied_growth=implied_revenue_growth(drivers, assumptions, price_in_reporting),
-        implied_average_growth=implied_average_growth(
-            drivers, assumptions, price_in_reporting
-        ),
+        implied_growth=implied_growth,
+        implied_average_growth=implied_average,
         implied_average_growth_at_lower_wacc=_implied_at_lower_waccs(
             drivers, assumptions, price_in_reporting
         ),
@@ -333,6 +358,8 @@ def value_company(
         margin_sensitivity=margin_sensitivity,
         drivers=drivers,
         valuation_lag=lag,
+        implied_growth_side=side,
+        implied_growth_bound=bound,
     )
 
 

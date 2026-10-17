@@ -17,7 +17,7 @@ from vlab.pipeline import (
     valuation_lag,
     value_company,
 )
-from vlab.reverse import implied_average_growth
+from vlab.reverse import GROWTH_BRACKET, GrowthOutOfRange, implied_average_growth
 from vlab.sensitivity import default_wacc_terminal_grid
 from vlab.universe import MARKET_INDEX, Company
 from vlab.wacc import compute_wacc, levered_beta
@@ -545,3 +545,46 @@ def test_value_company_can_measure_beta_in_the_trading_currency(tmp_path: Path) 
 def test_value_company_rejects_an_unknown_beta_currency(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="beta_currency"):
         _lvmh_value(tmp_path, days_after_year_end=30, beta_currency="index")
+
+
+def _price_beyond_the_bracket(tmp_path: Path, **kwargs):
+    frame = _fake_price_fetcher(["MC.PA", MARKET_INDEX], "5y", "1wk")
+    frame = frame.assign(**{"MC.PA": frame["MC.PA"] * 1000.0})
+    return value_company(
+        Company("MC.PA", "LVMH", "EUR", "EUR"), frame, frame[MARKET_INDEX],
+        cache_dir=tmp_path, refresh=True,
+        statement_fetcher=_fake_statement_fetcher, price_fetcher=_fake_price_fetcher,
+        **kwargs,
+    )
+
+
+def test_a_price_beyond_the_growth_bracket_raises_by_default(tmp_path: Path) -> None:
+    with pytest.raises(GrowthOutOfRange):
+        _price_beyond_the_bracket(tmp_path)
+
+
+def test_a_caller_can_keep_the_valuation_when_the_implied_growth_is_out_of_range(
+    tmp_path: Path,
+) -> None:
+    # The forward valuation, the WACC bridge and the grids do not depend on the reverse solve;
+    # a price the bracket cannot reproduce loses only the implied growth, with its side kept.
+    result = _price_beyond_the_bracket(tmp_path, keep_on_growth_miss=True)
+
+    assert result.implied_growth is None
+    assert result.implied_average_growth is None
+    assert result.implied_growth_side == "above"
+    assert result.implied_growth_bound == GROWTH_BRACKET[1]
+    assumptions = assumptions_from(result.drivers, result.wacc, TERMINAL_GROWTH,
+                                   valuation_lag=result.valuation_lag)
+    assert result.value_per_share == pytest.approx(
+        value(result.drivers, assumptions).value_per_share, rel=1e-12
+    )
+    assert result.sensitivity.notna().any().any()
+
+
+def test_a_solved_implied_growth_has_no_side(tmp_path: Path) -> None:
+    result = _lvmh_value(tmp_path, days_after_year_end=0, keep_on_growth_miss=True)
+
+    assert result.implied_growth is not None
+    assert result.implied_growth_side is None
+    assert result.implied_growth_bound is None
