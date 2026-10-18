@@ -23,7 +23,20 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - run: mkdir site && cp reports/valuation.html site/index.html
+      # The report now lives on emiliensabathier.fr: publish a redirect (also as 404.html for old sub-paths).
+      - run: |
+          mkdir site
+          url="https://emiliensabathier.fr/labs/${{ github.event.repository.name }}/"
+          cat > site/index.html <<EOF
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8">
+          <title>Moved</title>
+          <link rel="canonical" href="$url">
+          <meta http-equiv="refresh" content="0; url=$url">
+          <meta name="robots" content="noindex">
+          </head><body><p>This report moved to <a href="$url">$url</a>.</p></body></html>
+          EOF
+          cp site/index.html site/404.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
