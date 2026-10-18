@@ -33,7 +33,6 @@ jobs:
           <title>Moved</title>
           <link rel="canonical" href="$url">
           <meta http-equiv="refresh" content="0; url=$url">
-          <meta name="robots" content="noindex">
           </head><body><p>This report moved to <a href="$url">$url</a>.</p></body></html>
           EOF
           cp site/index.html site/404.html
